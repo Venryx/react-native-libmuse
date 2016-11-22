@@ -1,7 +1,7 @@
-apply plugin: 'com.android.library'
+apply plugin: "com.android.library"
 
 android {
-    compileSdkVersion 21
+    compileSdkVersion 23
     buildToolsVersion "23.0.1"
 
     defaultConfig {
@@ -14,10 +14,12 @@ android {
         }
     }
     lintOptions {
-       warning 'InvalidPackage'
+       warning "InvalidPackage"
     }
 }
 
 dependencies {
-    compile 'com.facebook.react:react-native:+'
+    compile "com.facebook.react:react-native:+"
+	//compile files("Libraries/libmuse_android.jar")
+	compile fileTree(include: ["*.jar"], dir: "Libraries")
 }

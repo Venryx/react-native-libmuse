@@ -46,8 +46,16 @@ import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
+import com.facebook.react.ReactPackage;
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.NativeModule;
+import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReactContextBaseJavaModule;
+import com.facebook.react.bridge.WritableArray;
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.facebook.react.uimanager.ViewManager;
+import com.facebook.react.bridge.JavaScriptModule;
 
 /**
  * This example will illustrate how to connect to a Muse headband,
@@ -70,7 +78,7 @@ import android.support.v4.content.ContextCompat;
  * 7. You can pause/resume data transmission with the button at the bottom of the screen.
  * 8. To disconnect from the headband, press "Disconnect"
  */
-class ListenerActivity extends Activity implements OnClickListener {
+class ListenerActivity extends Activity {
 
     /**
      * Tag used for logging purposes.
@@ -418,10 +426,7 @@ class ListenerActivity extends Activity implements OnClickListener {
             default:
                 break;
         }
-		
-		museDataPacketListener(p, muse);
     }
-	public Runnable museDataPacketListener(
 
     /**
      * You will receive a callback to this method each time an artifact packet is generated if you
