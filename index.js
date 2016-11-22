@@ -14,8 +14,8 @@ module.exports = {
 				listener(type, data);
 		});
 	},
-	Connect: function () {
-		LibMuseLink.Connect();
+	Connect: function(museIndex = 0) {
+		LibMuseLink.Connect(museIndex);
 	},
 	Disconnect: function () {
 		LibMuseLink.Disconnect();

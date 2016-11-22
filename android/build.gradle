@@ -20,6 +20,6 @@ android {
 
 dependencies {
     compile "com.facebook.react:react-native:+"
-	//compile files("Libraries/libmuse_android.jar")
-	compile fileTree(include: ["*.jar"], dir: "Libraries")
+    //compile files("Libraries/libmuse_android.jar")
+    compile fileTree(include: ["*.jar"], dir: "Libraries")
 }
