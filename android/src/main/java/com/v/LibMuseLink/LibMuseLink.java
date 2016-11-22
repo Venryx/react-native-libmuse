@@ -244,12 +244,7 @@ class ListenerActivity extends Activity implements OnClickListener {
 			// receive data packets of that type.
 			muse.unregisterAllListeners();
 			muse.registerConnectionListener(connectionListener);
-			muse.registerDataListener(dataListener, MuseDataPacketType.EEG);
-			muse.registerDataListener(dataListener, MuseDataPacketType.ALPHA_RELATIVE);
-			muse.registerDataListener(dataListener, MuseDataPacketType.ACCELEROMETER);
-			muse.registerDataListener(dataListener, MuseDataPacketType.BATTERY);
-			muse.registerDataListener(dataListener, MuseDataPacketType.DRL_REF);
-			muse.registerDataListener(dataListener, MuseDataPacketType.QUANTIZATION);
+			this.RegisterDataListener(dataListener);
 
 			// Initiate a connection to the headband and stream the data asynchronously.
 			muse.runAsynchronously();
@@ -270,6 +265,15 @@ class ListenerActivity extends Activity implements OnClickListener {
 			dataTransmission = !dataTransmission;
 			muse.enableDataTransmission(dataTransmission);
 		}
+	}
+	
+	void RegisterDataListener(MuseDataListener listener) {
+		muse.registerDataListener(dataListener, MuseDataPacketType.EEG);
+		muse.registerDataListener(dataListener, MuseDataPacketType.ALPHA_RELATIVE);
+		muse.registerDataListener(dataListener, MuseDataPacketType.ACCELEROMETER);
+		muse.registerDataListener(dataListener, MuseDataPacketType.BATTERY);
+		muse.registerDataListener(dataListener, MuseDataPacketType.DRL_REF);
+		muse.registerDataListener(dataListener, MuseDataPacketType.QUANTIZATION);
 	}
 
     //--------------------------------------
@@ -414,7 +418,10 @@ class ListenerActivity extends Activity implements OnClickListener {
             default:
                 break;
         }
+		
+		museDataPacketListener(p, muse);
     }
+	public Runnable museDataPacketListener(
 
     /**
      * You will receive a callback to this method each time an artifact packet is generated if you
@@ -761,8 +768,11 @@ public class LibMuseLink extends ReactContextBaseJavaModule {
     // Lifecycle / Connection code
 	
 	ListenerActivity activity;
+	DataListener listener = new DataListener();
     public void Start() {
         // todo: create activity
+		activity = new ListenerActivity();
+		activity.RegisterDataListener(listener);
     }
 
 	public void Refresh() {
@@ -777,4 +787,51 @@ public class LibMuseLink extends ReactContextBaseJavaModule {
 	public void TogglePaused() {
 		activity.TogglePaused();
 	}
+	
+	class DataListener extends MuseDataListener {
+        @Override
+        public void receiveMuseDataPacket(final MuseDataPacket p, final Muse muse) {
+			// valuesSize returns the number of data values contained in the packet.
+			final long n = p.valuesSize();
+			var packetType = p.packetType();
+			
+			string type = null;
+			final WritableArray data = Arguments.createArray();
+			if (packetType == MuseDataPacketType.EEG) {
+				type = "eeg";
+				data = new double[6];
+				data.pushDouble(p.getEegChannelValue(Eeg.EEG1));
+				data.pushDouble(p.getEegChannelValue(Eeg.EEG2));
+				data.pushDouble(p.getEegChannelValue(Eeg.EEG3));
+				data.pushDouble(p.getEegChannelValue(Eeg.EEG4));
+				data.pushDouble(p.getEegChannelValue(Eeg.AUX_LEFT));
+				data.pushDouble(p.getEegChannelValue(Eeg.AUX_RIGHT));
+			}
+			else if (packetType == MuseDataPacketType.ACCELEROMETER) {
+				type = "accelerometer";
+				data.pushDouble(p.getAccelerometerValue(Accelerometer.X));
+				data.pushDouble(p.getAccelerometerValue(Accelerometer.Y));
+				data.pushDouble(p.getAccelerometerValue(Accelerometer.Z));
+			}
+			else if (packetType == MuseDataPacketType.ALPHA_RELATIVE) {
+				type = "alpha";
+				data.pushDouble(p.getEegChannelValue(Eeg.EEG1));
+				data.pushDouble(p.getEegChannelValue(Eeg.EEG2));
+				data.pushDouble(p.getEegChannelValue(Eeg.EEG3));
+				data.pushDouble(p.getEegChannelValue(Eeg.EEG4));
+				data.pushDouble(p.getEegChannelValue(Eeg.AUX_LEFT));
+				data.pushDouble(p.getEegChannelValue(Eeg.AUX_RIGHT));
+			}
+			else // currently we just ignore other packet types
+				return;
+				
+			assert(data.length >= n);
+			
+            SendEvent("OnReceiveMuseDataPacket", type, data);
+        }
+
+        @Override
+        public void receiveMuseArtifactPacket(final MuseArtifactPacket p, final Muse muse) {
+        }
+    }
 }
