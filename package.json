@@ -2,7 +2,7 @@
 	"name": "react-native-libmuse",
 	"version": "1.0.0",
 	"description": "Bridge between libmuse and react-native.",
-	"main": "dist-modules",
+	"main": "index.js",
 	"scripts": {
 	},
 	"author": "Venryx",
@@ -12,5 +12,10 @@
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Venryx/react-native-libmuse"
-	}
+	},
+	"keywords": [
+		"react-component",
+		"react-native",
+		"android"
+	],
 }
