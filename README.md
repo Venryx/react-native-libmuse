@@ -1,18 +1,6 @@
 # react-native-libmuse
 Bridge between libmuse and react-native. (used for my other project)
 
-# Installation
-
-
-
-### If step 1 above fails, manually link:
-
-# react-native-device-info
-
-[![npm version](https://badge.fury.io/js/react-native-device-info.svg)](http://badge.fury.io/js/react-native-device-info)
-
-Device Information for [React Native](https://github.com/facebook/react-native)
-
 ## Install
 
 1) Run "npm install react-native-libmuse --save".
