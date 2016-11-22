@@ -43,7 +43,7 @@ include ':app'
 - in `MainApplication.java`:
 
 ```diff
-+ import com.learnium.RNDeviceInfo.LibMuseLink;
++ import com.v.LibMuseLink;
 
   public class MainApplication extends Application implements ReactApplication {
     //......
