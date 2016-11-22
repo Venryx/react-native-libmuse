@@ -10,4 +10,10 @@ Bridge between libmuse and react-native. (used for my other project)
 
 # Usage
 
-TODO
+```
+var LibMuseLink = require('react-native-libmuselink');
+
+var link = new LibMuseLink();
+link.Start();
+link.Connect();
+```
