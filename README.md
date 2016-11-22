@@ -64,8 +64,6 @@ include ':app'
 
 ```
 var LibMuseLink = require("react-native-libmuselink");
-
-var link = new LibMuseLink();
 link.Start();
 link.Connect();
 ```
