@@ -1,4 +1,4 @@
-package com.v.LibMuseLink;
+package com.v.LibMuse;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
@@ -723,7 +723,7 @@ class ListenerActivity extends Activity implements OnClickListener {
     }
 }
 
-public class LibMuseLink extends ReactContextBaseJavaModule {
+public class LibMuse extends ReactContextBaseJavaModule {
 	ReactApplicationContext reactContext;
 
 	public LibMuseLink(ReactApplicationContext reactContext) {

@@ -12,7 +12,7 @@ Bridge between libmuse and react-native. (used for my other project)
 #### With React Native 0.27+
 
 ```shell
-react-native link react-native-libmuselink
+react-native link react-native-libmuse
 ```
 
 ## Manually link
@@ -25,7 +25,7 @@ react-native link react-native-libmuselink
 dependencies {
     ...
     compile "com.facebook.react:react-native:+"  // From node_modules
-+   compile project(':react-native-libmuselink')
++   compile project(':react-native-libmuse')
 }
 ```
 
@@ -34,8 +34,8 @@ dependencies {
 ```diff
 ...
 include ':app'
-+ include ':react-native-libmuselink'
-+ project(':react-native-libmuselink').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-libmuselink/android')
++ include ':react-native-libmuse'
++ project(':react-native-libmuse').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-libmuse/android')
 ```
 
 ##### With React Native 0.29+
@@ -43,7 +43,7 @@ include ':app'
 - in `MainApplication.java`:
 
 ```diff
-+ import com.v.LibMuseLink;
++ import com.v.LibMuse;
 
   public class MainApplication extends Application implements ReactApplication {
     //......
@@ -51,7 +51,7 @@ include ':app'
     @Override
     protected List<ReactPackage> getPackages() {
       return Arrays.<ReactPackage>asList(
-+         new LibMuseLink(),
++         new LibMuse(),
           new MainReactPackage()
       );
     }
@@ -63,7 +63,7 @@ include ':app'
 # Usage
 
 ```
-var LibMuseLink = require("react-native-libmuselink");
-link.Start();
-link.Connect();
+var LibMuse = require("react-native-libmuse");
+muse.Start();
+muse.Connect();
 ```
