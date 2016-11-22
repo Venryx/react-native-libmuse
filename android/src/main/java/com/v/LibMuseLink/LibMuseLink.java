@@ -70,21 +70,7 @@ import android.support.v4.content.ContextCompat;
  * 7. You can pause/resume data transmission with the button at the bottom of the screen.
  * 8. To disconnect from the headband, press "Disconnect"
  */
-import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.bridge.ReactContextBaseJavaModule;
-
-public class LibMuseLink extends ReactContextBaseJavaModule {
-	ReactApplicationContext reactContext;
-
-	public LibMuseLink(ReactApplicationContext reactContext) {
-	super(reactContext);
-		this.reactContext = reactContext;
-	}
-
-	@Override
-	public String getName() {
-		return "LibMuseLink";
-	}
+class ListenerActivity extends Activity implements OnClickListener {
 
     /**
      * Tag used for logging purposes.
@@ -179,8 +165,12 @@ public class LibMuseLink extends ReactContextBaseJavaModule {
 
     //--------------------------------------
     // Lifecycle / Connection code
-	
-    public void Start() {
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
         // We need to set the context on MuseManagerAndroid before we can do anything.
         // This must come before other LibMuse API calls as it also loads the library.
         manager = MuseManagerAndroid.getInstance();
@@ -188,8 +178,8 @@ public class LibMuseLink extends ReactContextBaseJavaModule {
 
         Log.i(TAG, "LibMuse version=" + LibmuseVersion.instance().getString());
 
-        WeakReference<MainActivity> weakActivity =
-                new WeakReference<MainActivity>(this);
+        WeakReference<ListenerActivity> weakActivity =
+                new WeakReference<ListenerActivity>(this);
         // Register a listener to receive connection state changes.
         connectionListener = new ConnectionListener(weakActivity);
         // Register a listener to receive data from a Muse.
@@ -221,7 +211,7 @@ public class LibMuseLink extends ReactContextBaseJavaModule {
         // to avoid a resource leak from the LibMuse library.
         manager.stopListening();
     }
-
+	
 	public void Refresh() {
 		// The user has pressed the "Refresh" button.
 		// Start listening for nearby or paired Muse headbands. We call stopListening
@@ -272,7 +262,7 @@ public class LibMuseLink extends ReactContextBaseJavaModule {
 			muse.disconnect(false);
 		}
 	}
-	public void Pause() {
+	public void TogglePaused() {
 		// The user has pressed the "Pause/Resume" button to either pause or
 		// resume data transmission.  Toggle the state and pause or resume the
 		// transmission on the headband.
@@ -308,7 +298,7 @@ public class LibMuseLink extends ReactContextBaseJavaModule {
                     new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which){
                             dialog.dismiss();
-                            ActivityCompat.requestPermissions(MainActivity.this,
+                            ActivityCompat.requestPermissions(ListenerActivity.this,
                                     new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
                                     0);
                         }
@@ -682,9 +672,9 @@ public class LibMuseLink extends ReactContextBaseJavaModule {
     // Each of these classes extend from the appropriate listener and contain a weak reference
     // to the activity.  Each class simply forwards the messages it receives back to the Activity.
     class MuseL extends MuseListener {
-        final WeakReference<MainActivity> activityRef;
+        final WeakReference<ListenerActivity> activityRef;
 
-        MuseL(final WeakReference<MainActivity> activityRef) {
+        MuseL(final WeakReference<ListenerActivity> activityRef) {
             this.activityRef = activityRef;
         }
 
@@ -695,9 +685,9 @@ public class LibMuseLink extends ReactContextBaseJavaModule {
     }
 
     class ConnectionListener extends MuseConnectionListener {
-        final WeakReference<MainActivity> activityRef;
+        final WeakReference<ListenerActivity> activityRef;
 
-        ConnectionListener(final WeakReference<MainActivity> activityRef) {
+        ConnectionListener(final WeakReference<ListenerActivity> activityRef) {
             this.activityRef = activityRef;
         }
 
@@ -708,9 +698,9 @@ public class LibMuseLink extends ReactContextBaseJavaModule {
     }
 
     class DataListener extends MuseDataListener {
-        final WeakReference<MainActivity> activityRef;
+        final WeakReference<ListenerActivity> activityRef;
 
-        DataListener(final WeakReference<MainActivity> activityRef) {
+        DataListener(final WeakReference<ListenerActivity> activityRef) {
             this.activityRef = activityRef;
         }
 
@@ -724,4 +714,67 @@ public class LibMuseLink extends ReactContextBaseJavaModule {
             activityRef.get().receiveMuseArtifactPacket(p, muse);
         }
     }
+}
+
+public class LibMuseLink extends ReactContextBaseJavaModule {
+	ReactApplicationContext reactContext;
+
+	public LibMuseLink(ReactApplicationContext reactContext) {
+	super(reactContext);
+		this.reactContext = reactContext;
+	}
+
+	@Override
+	public String getName() {
+		return "LibMuseLink";
+	}
+	
+	public void SendEvent(String eventName, Object... args) {
+		WritableArray argsList = Arguments.createArray();
+		for (Object arg : args) {
+			if (arg == null)
+				argsList.pushNull();
+			else if (arg instanceof Boolean)
+				argsList.pushBoolean((Boolean)arg);
+			else if (arg instanceof Integer)
+				argsList.pushInt((Integer)arg);
+			else if (arg instanceof Double)
+				argsList.pushDouble((Double)arg);
+			else if (arg instanceof String)
+				argsList.pushString((String)arg);
+			else if (arg instanceof WritableArray)
+				argsList.pushArray((WritableArray)arg);
+			else {
+				//Assert(arg instanceof WritableMap, "Event args must be one of: WritableArray, Boolean")
+				if (!(arg instanceof WritableMap))
+					throw new RuntimeException("Event args must be one of: Boolean, Integer, Double, String, WritableArray, WritableMap");
+				argsList.pushMap((WritableMap)arg);
+			}
+		}
+
+		DeviceEventManagerModule.RCTDeviceEventEmitter jsModuleEventEmitter = reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class);
+		jsModuleEventEmitter.emit(eventName, argsList);
+	}
+	
+
+    //--------------------------------------
+    // Lifecycle / Connection code
+	
+	ListenerActivity activity;
+    public void Start() {
+        // todo: create activity
+    }
+
+	public void Refresh() {
+		activity.Refresh();
+	}
+	public void Connect() {
+		activity.Connect();
+	}
+	public void Disconnect() {
+		activity.Disconnect();
+	}
+	public void TogglePaused() {
+		activity.TogglePaused();
+	}
 }

@@ -3,15 +3,79 @@ Bridge between libmuse and react-native. (used for my other project)
 
 # Installation
 
-1) Run "npm install react-native-libmuse --save".  
-2) Run "react-native link react-native-libmuse".
-3) Download and install libmuse from here: http://dev.choosemuse.com/android  
-4) Copy "[libmuse install folder]/android/libs/libmuse_android.jar" into "[your project folder]/node_modules/react-native-libmuse/Libraries/".  
+
+
+### If step 1 above fails, manually link:
+
+# react-native-device-info
+
+[![npm version](https://badge.fury.io/js/react-native-device-info.svg)](http://badge.fury.io/js/react-native-device-info)
+
+Device Information for [React Native](https://github.com/facebook/react-native)
+
+## Install
+
+1) Run "npm install react-native-libmuse --save".
+2) Download and install libmuse from here: http://dev.choosemuse.com/android  
+3) Copy "[libmuse install folder]/android/libs/libmuse_android.jar" into "[your project folder]/node_modules/react-native-libmuse/Libraries/".  
+
+## Automatically link
+
+#### With React Native 0.27+
+
+```shell
+react-native link react-native-libmuselink
+```
+
+## Manually link
+
+##### Android
+
+- in `android/app/build.gradle`:
+
+```diff
+dependencies {
+    ...
+    compile "com.facebook.react:react-native:+"  // From node_modules
++   compile project(':react-native-libmuselink')
+}
+```
+
+- in `android/settings.gradle`:
+
+```diff
+...
+include ':app'
++ include ':react-native-libmuselink'
++ project(':react-native-libmuselink').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-libmuselink/android')
+```
+
+##### With React Native 0.29+
+
+- in `MainApplication.java`:
+
+```diff
++ import com.learnium.RNDeviceInfo.LibMuseLink;
+
+  public class MainApplication extends Application implements ReactApplication {
+    //......
+
+    @Override
+    protected List<ReactPackage> getPackages() {
+      return Arrays.<ReactPackage>asList(
++         new LibMuseLink(),
+          new MainReactPackage()
+      );
+    }
+
+    ......
+  }
+```
 
 # Usage
 
 ```
-var LibMuseLink = require('react-native-libmuselink');
+var LibMuseLink = require("react-native-libmuselink");
 
 var link = new LibMuseLink();
 link.Start();
