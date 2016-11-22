@@ -70,7 +70,21 @@ import android.support.v4.content.ContextCompat;
  * 7. You can pause/resume data transmission with the button at the bottom of the screen.
  * 8. To disconnect from the headband, press "Disconnect"
  */
-public class LibMuseLink {
+import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReactContextBaseJavaModule;
+
+public class LibMuseLink extends ReactContextBaseJavaModule {
+	ReactApplicationContext reactContext;
+
+	public LibMuseLink(ReactApplicationContext reactContext) {
+	super(reactContext);
+		this.reactContext = reactContext;
+	}
+
+	@Override
+	public String getName() {
+		return "LibMuseLink";
+	}
 
     /**
      * Tag used for logging purposes.
