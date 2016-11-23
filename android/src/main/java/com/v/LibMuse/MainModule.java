@@ -210,6 +210,13 @@ class MainModule extends ReactContextBaseJavaModule {
 		});
 	}
 
+	double fakeNaN = -1000000000;
+	void AddValue(WritableArray data, double value) {
+		if (Double.isNaN(value))
+			data.pushDouble(fakeNaN);
+		else
+			data.pushDouble(value);
+	}
 	void AddDataListener() {
 		RegisterDataListener(new MuseDataListener() {
 			@Override
@@ -219,48 +226,35 @@ class MainModule extends ReactContextBaseJavaModule {
 				MuseDataPacketType packetType = p.packetType();
 
 				String type;
-				List<Double> data = new ArrayList<>();
+				WritableArray data = Arguments.createArray();
 				if (packetType == MuseDataPacketType.EEG) {
 					type = "eeg";
-					data.add(p.getEegChannelValue(Eeg.EEG1));
-					data.add(p.getEegChannelValue(Eeg.EEG2));
-					data.add(p.getEegChannelValue(Eeg.EEG3));
-					data.add(p.getEegChannelValue(Eeg.EEG4));
-					data.add(p.getEegChannelValue(Eeg.AUX_LEFT));
-					data.add(p.getEegChannelValue(Eeg.AUX_RIGHT));
+					AddValue(data, p.getEegChannelValue(Eeg.EEG1));
+					AddValue(data, p.getEegChannelValue(Eeg.EEG2));
+					AddValue(data, p.getEegChannelValue(Eeg.EEG3));
+					AddValue(data, p.getEegChannelValue(Eeg.EEG4));
+					AddValue(data, p.getEegChannelValue(Eeg.AUX_LEFT));
+					AddValue(data, p.getEegChannelValue(Eeg.AUX_RIGHT));
 				}
 				else if (packetType == MuseDataPacketType.ACCELEROMETER) {
 					type = "accelerometer";
-					data.add(p.getAccelerometerValue(Accelerometer.X));
-					data.add(p.getAccelerometerValue(Accelerometer.Y));
-					data.add(p.getAccelerometerValue(Accelerometer.Z));
+					AddValue(data, p.getAccelerometerValue(Accelerometer.X));
+					AddValue(data, p.getAccelerometerValue(Accelerometer.Y));
+					AddValue(data, p.getAccelerometerValue(Accelerometer.Z));
 				}
 				else if (packetType == MuseDataPacketType.ALPHA_RELATIVE) {
 					type = "alpha";
-					data.add(p.getEegChannelValue(Eeg.EEG1));
-					data.add(p.getEegChannelValue(Eeg.EEG2));
-					data.add(p.getEegChannelValue(Eeg.EEG3));
-					data.add(p.getEegChannelValue(Eeg.EEG4));
-					data.add(p.getEegChannelValue(Eeg.AUX_LEFT));
-					data.add(p.getEegChannelValue(Eeg.AUX_RIGHT));
+					AddValue(data, p.getEegChannelValue(Eeg.EEG1));
+					AddValue(data, p.getEegChannelValue(Eeg.EEG2));
+					AddValue(data, p.getEegChannelValue(Eeg.EEG3));
+					AddValue(data, p.getEegChannelValue(Eeg.EEG4));
+					AddValue(data, p.getEegChannelValue(Eeg.AUX_LEFT));
+					AddValue(data, p.getEegChannelValue(Eeg.AUX_RIGHT));
 				}
 				else // currently we just ignore other packet types
 					return;
 
-				// note: double NaN cannot be serialized by normal react event-emit system
-				// 		that's one of the reasons we're using Json serialization
-				//		(the JSON serializer rejects NaN by default too, but can be corrected with call below)
-				try {
-					GsonBuilder gsonBuilder = new GsonBuilder();
-					gsonBuilder.serializeSpecialFloatingPointValues();
-					Gson gson = gsonBuilder.create();
-
-					String dataStr = gson.toJson(data);
-					//Log.i(ListenerService.TAG, "Sent JSON: " + dataStr);
-					SendEvent("OnReceiveMuseDataPacket", type, dataStr);
-				} catch (Throwable ex) {
-					Log.i(TAG, "Error: " + ex);
-				}
+				SendEvent("OnReceiveMuseDataPacket", type, data);
 			}
 
 			@Override

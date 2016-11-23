@@ -25,10 +25,9 @@ exports.default = {
 				listener(status);
 		});
 		DeviceEventEmitter.addListener("OnReceiveMuseDataPacket", args=> {
-			var [type, dataStr] = args;
-			//var data = FromJSON(dataStr);
+			var [type, data] = args;
 			for (let listener of listeners_onReceiveMuseDataPacket)
-				listener(type, dataStr);
+				listener(type, data);
 		});
 	},
 	
