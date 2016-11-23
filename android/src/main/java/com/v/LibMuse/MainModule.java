@@ -99,7 +99,7 @@ class ListenerService {
 	 * The MuseManager is how you detect Muse headbands and receive notifications
 	 * when the list of available headbands changes.
 	 */
-	private MuseManagerAndroid manager;
+	public MuseManagerAndroid manager;
 
 	/**
 	 * A Muse refers to a Muse headband.  Use this to connect/disconnect from the
@@ -117,26 +117,6 @@ class ListenerService {
 	 * that extends MuseConnectionListener.
 	 */
 	private ConnectionListener connectionListener;
-
-	/**
-	 * Data comes in from the headband at a very fast rate; 220Hz, 256Hz or 500Hz,
-	 * depending on the type of headband and the preset configuration.  We buffer the
-	 * data that is read until we can update the UI.
-	 * <p>
-	 * The stale flags indicate whether or not new data has been received and the buffers
-	 * hold the values of the last data packet received.  We are displaying the EEG, ALPHA_RELATIVE
-	 * and ACCELEROMETER values in this example.
-	 * <p>
-	 * Note: the array lengths of the buffers are taken from the comments in
-	 * MuseDataPacketType, which specify 3 values for accelerometer and 6
-	 * values for EEG and EEG-derived packets.
-	 */
-	private final double[] eegBuffer = new double[6];
-	private boolean eegStale;
-	private final double[] alphaBuffer = new double[6];
-	private boolean alphaStale;
-	private final double[] accelBuffer = new double[3];
-	private boolean accelStale;
 
 	/**
 	 * We will be updating the UI using a handler instead of in packet handlers because
@@ -174,21 +154,25 @@ class ListenerService {
 	//--------------------------------------
 	// Lifecycle / Connection code
 
-	protected void Start() {
+	public void Start() {
+		//assert(manager != null);
+		if (mainActivity == null)
+			throw new RuntimeException("LibMuse.mainActivity not set. (set it in your main-activity's constructor)");
+
 		// We need to set the context on MuseManagerAndroid before we can do anything.
 		// This must come before other LibMuse API calls as it also loads the library.
-		manager = MuseManagerAndroid.getInstance();
-		manager.setContext(mainActivity);
+		try {
+			manager = MuseManagerAndroid.getInstance();
+			manager.setContext(mainActivity);
+		} catch (Throwable ex) {
+			throw new RuntimeException("Failed to start muse-manager: " + ex);
+		}
 
 		Log.i(TAG, "LibMuse version=" + LibmuseVersion.instance().getString());
 
-		WeakReference<ListenerService> weakActivity =
-				new WeakReference<ListenerService>(this);
+		WeakReference<ListenerService> weakActivity = new WeakReference<ListenerService>(this);
 		// Register a listener to receive connection state changes.
 		connectionListener = new ConnectionListener(weakActivity);
-		// Register a listener to receive notifications of what Muse headbands
-		// we can connect to.
-		manager.setMuseListener(new MuseL(weakActivity));
 
 		// Muse 2016 (MU-02) headbands use Bluetooth Low Energy technology to
 		// simplify the connection process.  This requires access to the COARSE_LOCATION
@@ -304,21 +288,6 @@ class ListenerService {
 	}
 
 
-	//--------------------------------------
-	// Listeners
-
-	/**
-	 * You will receive a callback to this method each time a headband is discovered.
-	 * In this example, we update the spinner with the MAC address of the headband.
-	 */
-	public void museListChanged() {
-		final List<Muse> list = manager.getMuses();
-		spinnerAdapter.clear();
-		for (Muse m : list) {
-			spinnerAdapter.add(m.getName() + " - " + m.getMacAddress());
-		}
-	}
-
 	/**
 	 * You will receive a callback to this method each time there is a change to the
 	 * connection state of one of the headbands.
@@ -376,27 +345,9 @@ class ListenerService {
 		}
 	}
 
-	//--------------------------------------
-	// Listener translators
-	//
-	// Each of these classes extend from the appropriate listener and contain a weak reference
-	// to the activity.  Each class simply forwards the messages it receives back to the Activity.
-	class MuseL extends MuseListener {
-		final WeakReference<ListenerService> activityRef;
-
-		MuseL(final WeakReference<ListenerService> activityRef) {
-			this.activityRef = activityRef;
-		}
-
-		@Override
-		public void museListChanged() {
-			activityRef.get().museListChanged();
-		}
-	}
 
 	class ConnectionListener extends MuseConnectionListener {
 		final WeakReference<ListenerService> activityRef;
-
 		ConnectionListener(final WeakReference<ListenerService> activityRef) {
 			this.activityRef = activityRef;
 		}
@@ -409,10 +360,13 @@ class ListenerService {
 }
 
 class MainModule extends ReactContextBaseJavaModule {
+	static MainModule main;
+
 	ReactApplicationContext reactContext;
 
 	public MainModule(ReactApplicationContext reactContext) {
 		super(reactContext);
+		main = this;
 		this.reactContext = reactContext;
 	}
 
@@ -447,57 +401,37 @@ class MainModule extends ReactContextBaseJavaModule {
 		DeviceEventManagerModule.RCTDeviceEventEmitter jsModuleEventEmitter = reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class);
 		jsModuleEventEmitter.emit(eventName, argsList);
 	}
-	
-
-    //--------------------------------------
-    // Lifecycle / Connection code
-
-	//public static Context context;
-	/*public static Activity GetActivity() {
-		Class activityThreadClass = null;
-		try {
-			activityThreadClass = Class.forName("android.app.ActivityThread");
-
-			Object activityThread = activityThreadClass.getMethod("currentActivityThread").invoke(null);
-			Field activitiesField = activityThreadClass.getDeclaredField("mActivities");
-			activitiesField.setAccessible(true);
-
-			Map<Object, Object> activities = (Map<Object, Object>) activitiesField.get(activityThread);
-			if(activities == null)
-				return null;
-
-			for (Object activityRecord : activities.values()) {
-				Class activityRecordClass = activityRecord.getClass();
-				Field pausedField = activityRecordClass.getDeclaredField("paused");
-				pausedField.setAccessible(true);
-				if (!pausedField.getBoolean(activityRecord)) {
-					Field activityField = activityRecordClass.getDeclaredField("activity");
-					activityField.setAccessible(true);
-					Activity activity = (Activity) activityField.get(activityRecord);
-					return activity;
-				}
-			}
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
-		} catch (InvocationTargetException e) {
-			e.printStackTrace();
-		} catch (NoSuchMethodException e) {
-			e.printStackTrace();
-		} catch (NoSuchFieldException e) {
-			e.printStackTrace();
-		}
-		return null;
-	}*/
 
 	ListenerService service;
 	DataListener listener = new DataListener();
+
     @ReactMethod public void Start() {
 		service = new ListenerService();
 		//Activity mainActivity = GetActivity();
 		service.Start();
+
+		// Register a listener to receive notifications of what Muse headbands
+		// we can connect to.
+		service.manager.setMuseListener(new MuseL());
     }
+	class MuseL extends MuseListener {
+		@Override public void museListChanged() {
+			MainModule.main.OnMuseListChanged();
+		}
+	}
+	public void OnMuseListChanged() {
+		List<Muse> muses = service.manager.getMuses();
+		WritableArray museList = Arguments.createArray();
+		for (Muse muse : muses) {
+			WritableMap museInfo = Arguments.createMap();
+			museInfo.putString("name", muse.getName());
+			museInfo.putString("macAddress", muse.getMacAddress());
+			museInfo.putDouble("lastDiscoveredTime", muse.getLastDiscoveredTime());
+			museInfo.putDouble("rssi", muse.getRssi());
+			museList.pushMap(museInfo);
+		}
+		SendEvent("OnMuseListChange", museList);
+	}
 
 	@ReactMethod public void Refresh() {
 		service.Refresh();

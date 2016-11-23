@@ -7,14 +7,20 @@ Object.defineProperty(exports,"__esModule",{value:true});
 var {NativeModules, DeviceEventEmitter} = require("react-native");
 var LibMuse = NativeModules.LibMuse;
 
-var listeners = [];
+var onReceiveMuseDataPacket_listeners = [];
+var onMuseListChange_listeners = [];
 //module.exports = {
 exports.default = {
 	Start: function () {
 		LibMuse.Start();
 		DeviceEventEmitter.addListener("OnReceiveMuseDataPacket", args=> {
 			var [type, data] = args;
-			for (let listener of listeners)
+			for (let listener of onReceiveMuseDataPacket_listeners)
+				listener(type, data);
+		});
+		DeviceEventEmitter.addListener("OnMuseListChange", args=> {
+			var [type, data] = args;
+			for (let listener of onMuseListChange_listeners)
 				listener(type, data);
 		});
 	},
@@ -25,7 +31,10 @@ exports.default = {
 		LibMuse.Disconnect();
 	},
 	
-	AddMuseDataListener: function(listenerFunc) {
-		listeners.push(listenerFunc);
+	AddListener_OnReceiveMuseDataPacket: function(listenerFunc) {
+		onReceiveMuseDataPacket_listeners.push(listenerFunc);
 	},
+	AddListener_OnMuseListChange: function(listenerFunc) {
+		onMuseListChange_listeners.push(listenerFunc);
+	}
 };
