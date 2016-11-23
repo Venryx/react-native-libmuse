@@ -1,6 +1,7 @@
 package com.v.LibMuse;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import com.choosemuse.libmuse.Accelerometer;
@@ -32,23 +33,36 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import static com.v.LibMuse.LibMuse.mainActivity;
 
-class MainModule extends ReactContextBaseJavaModule {
+public class MainModule extends ReactContextBaseJavaModule {
+	public interface Func<T> {
+		void Run(T data);
+	}
+
 	// tag used for logging purposes.
 	static final String TAG = "TestLibMuseAndroid";
 
+	public static MainModule main;
+
 	public MainModule(ReactApplicationContext reactContext) {
 		super(reactContext);
+		main = this;
 		this.reactContext = reactContext;
 	}
 	ReactApplicationContext reactContext;
 
 	@Override
 	public String getName() { return "LibMuse"; }
+
+	// for use from user's Java classes
+	HashMap<String, List<Func<WritableArray>>> eventListeners = new HashMap<>();
+	public void AddEventListener(String eventName, Func<WritableArray> func) {
+		if (!eventListeners.containsKey(eventName))
+			eventListeners.put(eventName, new ArrayList<Func<WritableArray>>());
+		eventListeners.get(eventName).add(func);
+	}
 	
 	public void SendEvent(String eventName, Object... args) {
 		WritableArray argsList = Arguments.createArray();
@@ -75,6 +89,11 @@ class MainModule extends ReactContextBaseJavaModule {
 
 		DeviceEventManagerModule.RCTDeviceEventEmitter jsModuleEventEmitter = reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class);
 		jsModuleEventEmitter.emit(eventName, argsList);
+
+		if (eventListeners.containsKey(eventName)) {
+			for (Func<WritableArray> func : eventListeners.get(eventName))
+				func.Run(argsList);
+		}
 	}
 
 	// the MuseManager is how you detect Muse headbands and receive notifications when the list of available headbands changes
@@ -261,7 +280,7 @@ class MainModule extends ReactContextBaseJavaModule {
 			public void receiveMuseArtifactPacket(final MuseArtifactPacket p, final Muse muse) {}
 		});
 	}
-	void RegisterDataListener(MuseDataListener listener) {
+	public void RegisterDataListener(MuseDataListener listener) {
 		muse.registerDataListener(listener, MuseDataPacketType.EEG);
 		muse.registerDataListener(listener, MuseDataPacketType.ALPHA_RELATIVE);
 		muse.registerDataListener(listener, MuseDataPacketType.ACCELEROMETER);
