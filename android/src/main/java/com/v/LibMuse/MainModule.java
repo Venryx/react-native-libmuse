@@ -2,8 +2,11 @@ package com.v.LibMuse;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.choosemuse.libmuse.Accelerometer;
@@ -32,6 +35,7 @@ import com.choosemuse.libmuse.ResultLevel;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -61,6 +65,8 @@ import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.facebook.react.uimanager.ViewManager;
 import com.facebook.react.bridge.JavaScriptModule;
 
+import static com.v.LibMuse.LibMuse.mainActivity;
+
 /**
  * This example will illustrate how to connect to a Muse headband,
  * register for and receive EEG data and disconnect from the headband.
@@ -82,7 +88,7 @@ import com.facebook.react.bridge.JavaScriptModule;
  * 7. You can pause/resume data transmission with the button at the bottom of the screen.
  * 8. To disconnect from the headband, press "Disconnect"
  */
-class ListenerActivity extends Activity {
+class ListenerService {
 
 	/**
 	 * Tag used for logging purposes.
@@ -168,20 +174,16 @@ class ListenerActivity extends Activity {
 	//--------------------------------------
 	// Lifecycle / Connection code
 
-
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-
+	protected void Start() {
 		// We need to set the context on MuseManagerAndroid before we can do anything.
 		// This must come before other LibMuse API calls as it also loads the library.
 		manager = MuseManagerAndroid.getInstance();
-		manager.setContext(this);
+		manager.setContext(mainActivity);
 
 		Log.i(TAG, "LibMuse version=" + LibmuseVersion.instance().getString());
 
-		WeakReference<ListenerActivity> weakActivity =
-				new WeakReference<ListenerActivity>(this);
+		WeakReference<ListenerService> weakActivity =
+				new WeakReference<ListenerService>(this);
 		// Register a listener to receive connection state changes.
 		connectionListener = new ConnectionListener(weakActivity);
 		// Register a listener to receive notifications of what Muse headbands
@@ -193,18 +195,15 @@ class ListenerActivity extends Activity {
 		// or FINE_LOCATION permissions.  Make sure we have these permissions before
 		// proceeding.
 		ensurePermissions();
-
-		// Start up a thread for asynchronous file operations.
-		// This is only needed if you want to do File I/O.
-		fileThread.start();
 	}
 
-	protected void onPause() {
+	// make-so: root application calls into this library and tells to stop listening
+	/*protected void onPause() {
 		super.onPause();
 		// It is important to call stopListening when the Activity is paused
 		// to avoid a resource leak from the LibMuse library.
 		manager.stopListening();
-	}
+	}*/
 
 	public void Refresh() {
 		// The user has pressed the "Refresh" button.
@@ -279,7 +278,7 @@ class ListenerActivity extends Activity {
 	 * not be discovered and a SecurityException will be thrown.
 	 */
 	private void ensurePermissions() {
-		if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+		if (ContextCompat.checkSelfPermission(mainActivity, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 			// We don't have the ACCESS_COARSE_LOCATION permission so create the dialogs asking
 			// the user to grant us the permission.
 
@@ -287,15 +286,16 @@ class ListenerActivity extends Activity {
 			// this permission.  When the user presses the positive (I Understand) button, the
 			// standard Android permission dialog will be displayed (as defined in the button
 			// listener above).
-			AlertDialog introDialog = new AlertDialog.Builder(this)
+			AlertDialog introDialog = new AlertDialog.Builder(mainActivity)
 					.setTitle("Requesting permissions")
 					.setMessage("Location-services permission needed for Bluetooth connection to work.")
 					.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 						public void onClick(DialogInterface dialog, int which) {
-							dialog.dismiss();
-							ActivityCompat.requestPermissions(ListenerActivity.this,
+							/*dialog.dismiss();
+							ActivityCompat.requestPermissions(ListenerService.this,
 									new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-									0);
+									0);*/
+							throw new Error("V: Not yet implemented");
 						}
 					})
 					.create();
@@ -354,33 +354,6 @@ class ListenerActivity extends Activity {
 	public void receiveMuseArtifactPacket(final MuseArtifactPacket p, final Muse muse) {
 	}
 
-
-	//--------------------------------------
-	// File I/O
-
-	/**
-	 * We don't want to block the UI thread while we write to a file, so the file
-	 * writing is moved to a separate thread.
-	 */
-	private final Thread fileThread = new Thread() {
-		@Override
-		public void run() {
-			Looper.prepare();
-			fileHandler.set(new Handler());
-			final File dir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
-			final File file = new File(dir, "new_muse_file.muse");
-			// MuseFileWriter will append to an existing file.
-			// In this case, we want to start fresh so the file
-			// if it exists.
-			if (file.exists()) {
-				file.delete();
-			}
-			Log.i(TAG, "Writing data to: " + file.getAbsolutePath());
-			fileWriter.set(MuseFileFactory.getMuseFileWriter(file));
-			Looper.loop();
-		}
-	};
-
 	/**
 	 * Flushes all the data to the file and closes the file writer.
 	 */
@@ -403,83 +376,15 @@ class ListenerActivity extends Activity {
 		}
 	}
 
-	/**
-	 * Reads the provided .muse file and prints the data to the logcat.
-	 *
-	 * @param name The name of the file to read.  The file in this example
-	 *             is assumed to be in the Environment.DIRECTORY_DOWNLOADS
-	 *             directory.
-	 */
-	private void playMuseFile(String name) {
-
-		File dir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
-		File file = new File(dir, name);
-
-		final String tag = "Muse File Reader";
-
-		if (!file.exists()) {
-			Log.w(tag, "file doesn't exist");
-			return;
-		}
-
-		MuseFileReader fileReader = MuseFileFactory.getMuseFileReader(file);
-
-		// Loop through each message in the file.  gotoNextMessage will read the next message
-		// and return the result of the read operation as a Result.
-		Result res = fileReader.gotoNextMessage();
-		while (res.getLevel() == ResultLevel.R_INFO && !res.getInfo().contains("EOF")) {
-
-			MessageType type = fileReader.getMessageType();
-			int id = fileReader.getMessageId();
-			long timestamp = fileReader.getMessageTimestamp();
-
-			Log.i(tag, "type: " + type.toString() +
-					" id: " + Integer.toString(id) +
-					" timestamp: " + String.valueOf(timestamp));
-
-			switch (type) {
-				// EEG messages contain raw EEG data or DRL/REF data.
-				// EEG derived packets like ALPHA_RELATIVE and artifact packets
-				// are stored as MUSE_ELEMENTS messages.
-				case EEG:
-				case BATTERY:
-				case ACCELEROMETER:
-				case QUANTIZATION:
-				case GYRO:
-				case MUSE_ELEMENTS:
-					MuseDataPacket packet = fileReader.getDataPacket();
-					Log.i(tag, "data packet: " + packet.packetType().toString());
-					break;
-				case VERSION:
-					MuseVersion version = fileReader.getVersion();
-					Log.i(tag, "version" + version.getFirmwareType());
-					break;
-				case CONFIGURATION:
-					MuseConfiguration config = fileReader.getConfiguration();
-					Log.i(tag, "config" + config.getBluetoothMac());
-					break;
-				case ANNOTATION:
-					AnnotationData annotation = fileReader.getAnnotation();
-					Log.i(tag, "annotation" + annotation.getData());
-					break;
-				default:
-					break;
-			}
-
-			// Read the next message.
-			res = fileReader.gotoNextMessage();
-		}
-	}
-
 	//--------------------------------------
 	// Listener translators
 	//
 	// Each of these classes extend from the appropriate listener and contain a weak reference
 	// to the activity.  Each class simply forwards the messages it receives back to the Activity.
 	class MuseL extends MuseListener {
-		final WeakReference<ListenerActivity> activityRef;
+		final WeakReference<ListenerService> activityRef;
 
-		MuseL(final WeakReference<ListenerActivity> activityRef) {
+		MuseL(final WeakReference<ListenerService> activityRef) {
 			this.activityRef = activityRef;
 		}
 
@@ -490,9 +395,9 @@ class ListenerActivity extends Activity {
 	}
 
 	class ConnectionListener extends MuseConnectionListener {
-		final WeakReference<ListenerActivity> activityRef;
+		final WeakReference<ListenerService> activityRef;
 
-		ConnectionListener(final WeakReference<ListenerActivity> activityRef) {
+		ConnectionListener(final WeakReference<ListenerService> activityRef) {
 			this.activityRef = activityRef;
 		}
 
@@ -503,10 +408,10 @@ class ListenerActivity extends Activity {
 	}
 }
 
-class LibMuse_MainModule extends ReactContextBaseJavaModule {
+class MainModule extends ReactContextBaseJavaModule {
 	ReactApplicationContext reactContext;
 
-	public LibMuse_MainModule(ReactApplicationContext reactContext) {
+	public MainModule(ReactApplicationContext reactContext) {
 		super(reactContext);
 		this.reactContext = reactContext;
 	}
@@ -546,26 +451,66 @@ class LibMuse_MainModule extends ReactContextBaseJavaModule {
 
     //--------------------------------------
     // Lifecycle / Connection code
-	
-	ListenerActivity activity;
+
+	//public static Context context;
+	/*public static Activity GetActivity() {
+		Class activityThreadClass = null;
+		try {
+			activityThreadClass = Class.forName("android.app.ActivityThread");
+
+			Object activityThread = activityThreadClass.getMethod("currentActivityThread").invoke(null);
+			Field activitiesField = activityThreadClass.getDeclaredField("mActivities");
+			activitiesField.setAccessible(true);
+
+			Map<Object, Object> activities = (Map<Object, Object>) activitiesField.get(activityThread);
+			if(activities == null)
+				return null;
+
+			for (Object activityRecord : activities.values()) {
+				Class activityRecordClass = activityRecord.getClass();
+				Field pausedField = activityRecordClass.getDeclaredField("paused");
+				pausedField.setAccessible(true);
+				if (!pausedField.getBoolean(activityRecord)) {
+					Field activityField = activityRecordClass.getDeclaredField("activity");
+					activityField.setAccessible(true);
+					Activity activity = (Activity) activityField.get(activityRecord);
+					return activity;
+				}
+			}
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
+		} catch (NoSuchFieldException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}*/
+
+	ListenerService service;
 	DataListener listener = new DataListener();
     @ReactMethod public void Start() {
-        // todo: create activity
-		activity = new ListenerActivity();
+		service = new ListenerService();
+		//Activity mainActivity = GetActivity();
+		service.Start();
     }
 
 	@ReactMethod public void Refresh() {
-		activity.Refresh();
+		service.Refresh();
 	}
 	@ReactMethod public void Connect(int museIndex) {
-		activity.Connect(museIndex);
-		activity.RegisterDataListener(listener);
+		service.Connect(museIndex);
+		service.RegisterDataListener(listener);
 	}
 	@ReactMethod public void Disconnect() {
-		activity.Disconnect();
+		service.Disconnect();
 	}
 	@ReactMethod public void TogglePaused() {
-		activity.TogglePaused();
+		service.TogglePaused();
 	}
 	
 	class DataListener extends MuseDataListener {

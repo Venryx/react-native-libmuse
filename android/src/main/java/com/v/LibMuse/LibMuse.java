@@ -1,5 +1,7 @@
 package com.v.LibMuse;
 
+import android.app.Activity;
+
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,10 +14,12 @@ import com.facebook.react.uimanager.ViewManager;
 import com.facebook.react.bridge.JavaScriptModule;
 
 public class LibMuse implements ReactPackage {
+	public static Activity mainActivity;
+
 	@Override
 	public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
 		List<NativeModule> modules = new ArrayList<>();
-		modules.add(new LibMuse_MainModule(reactContext));
+		modules.add(new MainModule(reactContext));
 		return modules;
 	}
 
