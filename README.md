@@ -62,6 +62,14 @@ include ':app'
   }
 ```
 
+- in your main activity class:
+
+```
+//public class MyActivity extends ReactActivity {
+//	MyActivity() {
+		MainModule.mainActivity = this;
+```
+
 # Usage
 
 ```

@@ -551,8 +551,7 @@ class LibMuse_MainModule extends ReactContextBaseJavaModule {
 	DataListener listener = new DataListener();
     @ReactMethod public void Start() {
         // todo: create activity
-		/*activity = new ListenerActivity();
-		activity.RegisterDataListener(listener);*/
+		activity = new ListenerActivity();
     }
 
 	@ReactMethod public void Refresh() {
@@ -560,6 +559,7 @@ class LibMuse_MainModule extends ReactContextBaseJavaModule {
 	}
 	@ReactMethod public void Connect(int museIndex) {
 		activity.Connect(museIndex);
+		activity.RegisterDataListener(listener);
 	}
 	@ReactMethod public void Disconnect() {
 		activity.Disconnect();
