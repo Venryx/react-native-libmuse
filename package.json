@@ -1,6 +1,6 @@
 {
 	"name": "react-native-libmuse",
-	"version": "1.0.4",
+	"version": "1.0.5",
 	"description": "Bridge between libmuse and react-native.",
 	"main": "index.js",
 	"scripts": {
