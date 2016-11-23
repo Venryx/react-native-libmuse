@@ -54,6 +54,7 @@ import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.NativeModule;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
+import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
@@ -502,11 +503,11 @@ class ListenerActivity extends Activity {
 	}
 }
 
-public class MainModule extends ReactContextBaseJavaModule {
+class LibMuse_MainModule extends ReactContextBaseJavaModule {
 	ReactApplicationContext reactContext;
 
-	public MainModule(ReactApplicationContext reactContext) {
-	super(reactContext);
+	public LibMuse_MainModule(ReactApplicationContext reactContext) {
+		super(reactContext);
 		this.reactContext = reactContext;
 	}
 
@@ -548,22 +549,22 @@ public class MainModule extends ReactContextBaseJavaModule {
 	
 	ListenerActivity activity;
 	DataListener listener = new DataListener();
-    public void Start() {
+    @ReactMethod public void Start() {
         // todo: create activity
-		activity = new ListenerActivity();
-		activity.RegisterDataListener(listener);
+		/*activity = new ListenerActivity();
+		activity.RegisterDataListener(listener);*/
     }
 
-	public void Refresh() {
+	@ReactMethod public void Refresh() {
 		activity.Refresh();
 	}
-	public void Connect(int museIndex) {
+	@ReactMethod public void Connect(int museIndex) {
 		activity.Connect(museIndex);
 	}
-	public void Disconnect() {
+	@ReactMethod public void Disconnect() {
 		activity.Disconnect();
 	}
-	public void TogglePaused() {
+	@ReactMethod public void TogglePaused() {
 		activity.TogglePaused();
 	}
 	

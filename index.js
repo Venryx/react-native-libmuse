@@ -2,12 +2,16 @@
  * @providesModule react-native-libmuse
  */
 
-var LibMuseLink = require("react-native").NativeModules.LibMuseLink;
+Object.defineProperty(exports,"__esModule",{value:true});
+ 
+var {NativeModules, DeviceEventEmitter} = require("react-native");
+var LibMuse = NativeModules.LibMuse;
 
 var listeners = [];
-module.exports = {
+//module.exports = {
+exports.default = {
 	Start: function () {
-		LibMuseLink.Start();
+		LibMuse.Start();
 		DeviceEventEmitter.addListener("OnReceiveMuseDataPacket", args=> {
 			var [type, data] = args;
 			for (let listener of listeners)
@@ -15,10 +19,10 @@ module.exports = {
 		});
 	},
 	Connect: function(museIndex = 0) {
-		LibMuseLink.Connect(museIndex);
+		LibMuse.Connect(museIndex);
 	},
 	Disconnect: function () {
-		LibMuseLink.Disconnect();
+		LibMuse.Disconnect();
 	},
 	
 	AddMuseDataListener: function(listenerFunc) {
