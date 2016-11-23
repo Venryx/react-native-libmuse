@@ -34,7 +34,7 @@ exports.default = {
 	
 	// searching
 	StopSearch: function() {
-		LibMuse.RestartSearch();
+		LibMuse.StopSearch();
 	},
 	StartSearch: function() {
 		LibMuse.StartSearch();
