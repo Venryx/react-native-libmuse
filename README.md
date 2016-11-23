@@ -67,9 +67,9 @@ include ':app'
 
 ```
 var LibMuse = require("react-native-libmuse");
-LibMuse.Start();
-//LibMuse.Refresh(); // calling this can improve the device-find speed, for some reason
-DeviceEventEmitter.addListener("OnMuseListChange", args=> {
+LibMuse.Init();
+LibMuse.StartSearch();
+DeviceEventEmitter.addListener("OnChangeMuseList", args=> {
 	var [museList] = args;
 	if (museList.length)
 		LibMuse.Connect();
