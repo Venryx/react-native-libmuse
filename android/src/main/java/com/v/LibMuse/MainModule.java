@@ -4,6 +4,7 @@ import java.io.File;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.List;
 
 import java.util.Map;
@@ -64,6 +65,8 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.facebook.react.uimanager.ViewManager;
 import com.facebook.react.bridge.JavaScriptModule;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import static com.v.LibMuse.LibMuse.mainActivity;
 
@@ -93,7 +96,7 @@ class ListenerService {
 	/**
 	 * Tag used for logging purposes.
 	 */
-	private final String TAG = "TestLibMuseAndroid";
+	public static final String TAG = "TestLibMuseAndroid";
 
 	/**
 	 * The MuseManager is how you detect Muse headbands and receive notifications
@@ -271,18 +274,15 @@ class ListenerService {
 			// standard Android permission dialog will be displayed (as defined in the button
 			// listener above).
 			AlertDialog introDialog = new AlertDialog.Builder(mainActivity)
-					.setTitle("Requesting permissions")
-					.setMessage("Location-services permission needed for Bluetooth connection to work.")
-					.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-						public void onClick(DialogInterface dialog, int which) {
-							/*dialog.dismiss();
-							ActivityCompat.requestPermissions(ListenerService.this,
-									new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-									0);*/
-							throw new Error("V: Not yet implemented");
-						}
-					})
-					.create();
+				.setTitle("Requesting permissions")
+				.setMessage("Location-services permission needed for Bluetooth connection to work.")
+				.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int which) {
+						dialog.dismiss();
+						ActivityCompat.requestPermissions(mainActivity, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
+					}
+				})
+				.create();
 			introDialog.show();
 		}
 	}
@@ -369,6 +369,7 @@ class MainModule extends ReactContextBaseJavaModule {
 		main = this;
 		this.reactContext = reactContext;
 	}
+	DeviceEventManagerModule.RCTDeviceEventEmitter jsModuleEventEmitter;
 
 	@Override
 	public String getName() {
@@ -397,6 +398,9 @@ class MainModule extends ReactContextBaseJavaModule {
 				argsList.pushMap((WritableMap)arg);
 			}
 		}
+
+		/*WritableMap pack = Arguments.createMap();
+		pack.putArray("args", argsList);*/
 
 		DeviceEventManagerModule.RCTDeviceEventEmitter jsModuleEventEmitter = reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class);
 		jsModuleEventEmitter.emit(eventName, argsList);
@@ -455,39 +459,54 @@ class MainModule extends ReactContextBaseJavaModule {
 			MuseDataPacketType packetType = p.packetType();
 			
 			String type = null;
-			final WritableArray data = Arguments.createArray();
+			//final WritableArray data = Arguments.createArray();
+			//final double[] data;
+			List<Double> data = new ArrayList<>();
 			if (packetType == MuseDataPacketType.EEG) {
 				type = "eeg";
-				data.pushDouble(p.getEegChannelValue(Eeg.EEG1));
-				data.pushDouble(p.getEegChannelValue(Eeg.EEG2));
-				data.pushDouble(p.getEegChannelValue(Eeg.EEG3));
-				data.pushDouble(p.getEegChannelValue(Eeg.EEG4));
-				data.pushDouble(p.getEegChannelValue(Eeg.AUX_LEFT));
-				data.pushDouble(p.getEegChannelValue(Eeg.AUX_RIGHT));
+				//data.pushDouble(p.getEegChannelValue(Eeg.EEG1));
+				//data = new double[6];
+				data.add(p.getEegChannelValue(Eeg.EEG1));
+				data.add(p.getEegChannelValue(Eeg.EEG2));
+				data.add(p.getEegChannelValue(Eeg.EEG3));
+				data.add(p.getEegChannelValue(Eeg.EEG4));
+				data.add(p.getEegChannelValue(Eeg.AUX_LEFT));
+				data.add(p.getEegChannelValue(Eeg.AUX_RIGHT));
 			}
 			else if (packetType == MuseDataPacketType.ACCELEROMETER) {
 				type = "accelerometer";
-				data.pushDouble(p.getAccelerometerValue(Accelerometer.X));
-				data.pushDouble(p.getAccelerometerValue(Accelerometer.Y));
-				data.pushDouble(p.getAccelerometerValue(Accelerometer.Z));
+				data.add(p.getAccelerometerValue(Accelerometer.X));
+				data.add(p.getAccelerometerValue(Accelerometer.Y));
+				data.add(p.getAccelerometerValue(Accelerometer.Z));
 			}
 			else if (packetType == MuseDataPacketType.ALPHA_RELATIVE) {
 				type = "alpha";
-				data.pushDouble(p.getEegChannelValue(Eeg.EEG1));
-				data.pushDouble(p.getEegChannelValue(Eeg.EEG2));
-				data.pushDouble(p.getEegChannelValue(Eeg.EEG3));
-				data.pushDouble(p.getEegChannelValue(Eeg.EEG4));
-				data.pushDouble(p.getEegChannelValue(Eeg.AUX_LEFT));
-				data.pushDouble(p.getEegChannelValue(Eeg.AUX_RIGHT));
+				data.add(p.getEegChannelValue(Eeg.EEG1));
+				data.add(p.getEegChannelValue(Eeg.EEG2));
+				data.add(p.getEegChannelValue(Eeg.EEG3));
+				data.add(p.getEegChannelValue(Eeg.EEG4));
+				data.add(p.getEegChannelValue(Eeg.AUX_LEFT));
+				data.add(p.getEegChannelValue(Eeg.AUX_RIGHT));
 			}
 			else // currently we just ignore other packet types
 				return;
 
-			// packet-data value-count should match the number expected
-			assert(data.size() == n);
-			
-            SendEvent("OnReceiveMuseDataPacket", type, data);
-        }
+			// note: double NaN cannot be serialized by normal react event-emit system
+			// 		that's one of the reasons we're using Json serialization
+			//		(the JSON serializer rejects NaN by default too, but can be corrected with call below)
+
+			try {
+				GsonBuilder gsonBuilder = new GsonBuilder();
+				gsonBuilder.serializeSpecialFloatingPointValues();
+				Gson gson = gsonBuilder.create();
+
+				String dataStr = gson.toJson(data);
+				//Log.i(ListenerService.TAG, "Sent JSON: " + dataStr);
+				SendEvent("OnReceiveMuseDataPacket", type, dataStr);
+			} catch (Throwable ex) {
+				Log.i(ListenerService.TAG, "Error: " + ex);
+			}
+		}
 
         @Override
         public void receiveMuseArtifactPacket(final MuseArtifactPacket p, final Muse muse) {

@@ -38,4 +38,6 @@ dependencies {
     compile fileTree(include: ["*.jar"], dir: "Libraries")
     //compile fileTree(include: ["*.jar", "*.so"], dir: "Libraries")
     //compile fileTree(dir: "$buildDir/native-libs", include: 'native-libs.jar')
+
+    compile 'com.google.code.gson:gson:2.8.0'
 }
