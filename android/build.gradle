@@ -1,4 +1,27 @@
+/*buildscript {
+    repositories {
+        maven { url 'https://maven.fabric.io/public' }
+    }
+
+    dependencies {
+        // The Fabric Gradle plugin uses an open ended version to react
+        // quickly to Android tooling updates
+        classpath 'io.fabric.tools:gradle:1.+'
+    }
+}
+plugins {
+    id "me.tatarka.retrolambda" version "3.4.0"
+}*/
+
 apply plugin: "com.android.library"
+
+// for the retro-lambda plugin above (so Android Studio doesn't show red-lines on lambda code)
+/*android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}*/
 
 android {
     compileSdkVersion 23

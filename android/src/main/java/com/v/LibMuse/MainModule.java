@@ -56,14 +56,6 @@ public class MainModule extends ReactContextBaseJavaModule {
 	@Override
 	public String getName() { return "LibMuse"; }
 
-	// for use from user's Java classes
-	HashMap<String, List<Func<WritableArray>>> eventListeners = new HashMap<>();
-	public void AddEventListener(String eventName, Func<WritableArray> func) {
-		if (!eventListeners.containsKey(eventName))
-			eventListeners.put(eventName, new ArrayList<Func<WritableArray>>());
-		eventListeners.get(eventName).add(func);
-	}
-	
 	public void SendEvent(String eventName, Object... args) {
 		WritableArray argsList = Arguments.createArray();
 		for (Object arg : args) {
@@ -89,11 +81,6 @@ public class MainModule extends ReactContextBaseJavaModule {
 
 		DeviceEventManagerModule.RCTDeviceEventEmitter jsModuleEventEmitter = reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class);
 		jsModuleEventEmitter.emit(eventName, argsList);
-
-		if (eventListeners.containsKey(eventName)) {
-			for (Func<WritableArray> func : eventListeners.get(eventName))
-				func.Run(argsList);
-		}
 	}
 
 	// the MuseManager is how you detect Muse headbands and receive notifications when the list of available headbands changes
@@ -236,10 +223,18 @@ public class MainModule extends ReactContextBaseJavaModule {
 		else
 			data.pushDouble(value);
 	}
+
+	public MuseDataListener extraListener;
+	public boolean dataListenerEnabled = true;
 	void AddDataListener() {
 		RegisterDataListener(new MuseDataListener() {
 			@Override
 			public void receiveMuseDataPacket(final MuseDataPacket p, final Muse muse) {
+				if (extraListener != null)
+					extraListener.receiveMuseDataPacket(p, muse);
+
+				if (!dataListenerEnabled) return;
+
 				// valuesSize returns the number of data values contained in the packet.
 				final long n = p.valuesSize();
 				MuseDataPacketType packetType = p.packetType();
@@ -280,7 +275,7 @@ public class MainModule extends ReactContextBaseJavaModule {
 			public void receiveMuseArtifactPacket(final MuseArtifactPacket p, final Muse muse) {}
 		});
 	}
-	public void RegisterDataListener(MuseDataListener listener) {
+	void RegisterDataListener(MuseDataListener listener) {
 		muse.registerDataListener(listener, MuseDataPacketType.EEG);
 		muse.registerDataListener(listener, MuseDataPacketType.ALPHA_RELATIVE);
 		muse.registerDataListener(listener, MuseDataPacketType.ACCELEROMETER);
