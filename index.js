@@ -24,10 +24,17 @@ exports.default = {
 			for (let listener of listeners_onChangeMuseConnectStatus)
 				listener(status);
 		});
-		DeviceEventEmitter.addListener("OnReceiveMuseDataPacket", args=> {
-			var [type, data] = args;
+		/*DeviceEventEmitter.addListener("OnReceiveMuseDataPacket", args=> {
+			var [type, channelValues] = args;
 			for (let listener of listeners_onReceiveMuseDataPacket)
-				listener(type, data);
+				listener(type, channelValues);
+		});*/
+		DeviceEventEmitter.addListener("OnReceiveMuseDataPacketSet", args=> {
+			var [packets] = args;
+			for (let {type, channelValues} of packets) {
+				for (let listener of listeners_onReceiveMuseDataPacket)
+					listener(type, channelValues);
+			}
 		});
 	},
 	

@@ -196,22 +196,22 @@ public class MainModule extends ReactContextBaseJavaModule {
 	void AddConnectionListener() {
 		muse.registerConnectionListener(new MuseConnectionListener() {
 			@Override public void receiveMuseConnectionPacket(MuseConnectionPacket packet, Muse muse) {
-				final ConnectionState current = packet.getCurrentConnectionState();
+			final ConnectionState current = packet.getCurrentConnectionState();
 
-				// Format a message to show the change of connection state in the UI.
-				final String status = packet.getPreviousConnectionState() + " -> " + current;
-				Log.i(TAG, status);
+			// Format a message to show the change of connection state in the UI.
+			final String status = packet.getPreviousConnectionState() + " -> " + current;
+			Log.i(TAG, status);
 
-				if (current == ConnectionState.CONNECTED) {
-					Log.i(TAG, "Muse connected: " + muse.getName());
-				}
-				if (current == ConnectionState.DISCONNECTED) {
-					Log.i(TAG, "Muse disconnected: " + muse.getName());
-					// We have disconnected from the headband, so set our cached copy to null.
-					MainModule.this.muse = null;
-				}
+			if (current == ConnectionState.CONNECTED) {
+				Log.i(TAG, "Muse connected: " + muse.getName());
+			}
+			if (current == ConnectionState.DISCONNECTED) {
+				Log.i(TAG, "Muse disconnected: " + muse.getName());
+				// We have disconnected from the headband, so set our cached copy to null.
+				MainModule.this.muse = null;
+			}
 
-				SendEvent("OnChangeMuseConnectStatus", current.name().toLowerCase());
+			SendEvent("OnChangeMuseConnectStatus", current.name().toLowerCase());
 			}
 		});
 	}
@@ -229,52 +229,71 @@ public class MainModule extends ReactContextBaseJavaModule {
 	void AddDataListener() {
 		RegisterDataListener(new MuseDataListener() {
 			@Override
-			public void receiveMuseDataPacket(final MuseDataPacket p, final Muse muse) {
+			public void receiveMuseDataPacket(final MuseDataPacket packet, final Muse muse) {
 				if (extraListener != null)
-					extraListener.receiveMuseDataPacket(p, muse);
+					extraListener.receiveMuseDataPacket(packet, muse);
 
 				if (!dataListenerEnabled) return;
 
-				// valuesSize returns the number of data values contained in the packet.
-				final long n = p.valuesSize();
-				MuseDataPacketType packetType = p.packetType();
+				MuseDataPacketType packetType = packet.packetType();
 
 				String type;
-				WritableArray data = Arguments.createArray();
+				WritableArray channelValues = Arguments.createArray();
 				if (packetType == MuseDataPacketType.EEG) {
 					type = "eeg";
-					AddValue(data, p.getEegChannelValue(Eeg.EEG1));
-					AddValue(data, p.getEegChannelValue(Eeg.EEG2));
-					AddValue(data, p.getEegChannelValue(Eeg.EEG3));
-					AddValue(data, p.getEegChannelValue(Eeg.EEG4));
-					AddValue(data, p.getEegChannelValue(Eeg.AUX_LEFT));
-					AddValue(data, p.getEegChannelValue(Eeg.AUX_RIGHT));
+					AddValue(channelValues, packet.getEegChannelValue(Eeg.EEG1));
+					AddValue(channelValues, packet.getEegChannelValue(Eeg.EEG2));
+					AddValue(channelValues, packet.getEegChannelValue(Eeg.EEG3));
+					AddValue(channelValues, packet.getEegChannelValue(Eeg.EEG4));
+					AddValue(channelValues, packet.getEegChannelValue(Eeg.AUX_LEFT));
+					AddValue(channelValues, packet.getEegChannelValue(Eeg.AUX_RIGHT));
 				}
 				else if (packetType == MuseDataPacketType.ACCELEROMETER) {
 					type = "accelerometer";
-					AddValue(data, p.getAccelerometerValue(Accelerometer.X));
-					AddValue(data, p.getAccelerometerValue(Accelerometer.Y));
-					AddValue(data, p.getAccelerometerValue(Accelerometer.Z));
+					AddValue(channelValues, packet.getAccelerometerValue(Accelerometer.X));
+					AddValue(channelValues, packet.getAccelerometerValue(Accelerometer.Y));
+					AddValue(channelValues, packet.getAccelerometerValue(Accelerometer.Z));
 				}
 				else if (packetType == MuseDataPacketType.ALPHA_RELATIVE) {
 					type = "alpha";
-					AddValue(data, p.getEegChannelValue(Eeg.EEG1));
-					AddValue(data, p.getEegChannelValue(Eeg.EEG2));
-					AddValue(data, p.getEegChannelValue(Eeg.EEG3));
-					AddValue(data, p.getEegChannelValue(Eeg.EEG4));
-					AddValue(data, p.getEegChannelValue(Eeg.AUX_LEFT));
-					AddValue(data, p.getEegChannelValue(Eeg.AUX_RIGHT));
+					AddValue(channelValues, packet.getEegChannelValue(Eeg.EEG1));
+					AddValue(channelValues, packet.getEegChannelValue(Eeg.EEG2));
+					AddValue(channelValues, packet.getEegChannelValue(Eeg.EEG3));
+					AddValue(channelValues, packet.getEegChannelValue(Eeg.EEG4));
+					AddValue(channelValues, packet.getEegChannelValue(Eeg.AUX_LEFT));
+					AddValue(channelValues, packet.getEegChannelValue(Eeg.AUX_RIGHT));
 				}
 				else // currently we just ignore other packet types
 					return;
 
-				SendEvent("OnReceiveMuseDataPacket", type, data);
+				// if you want to send a received packet right away, every frame, use this
+				// ==========
+
+				//SendEvent("OnReceiveMuseDataPacket", type, data);
+
+				// otherwise, use the default below, of buffering then sending in a set
+				// ==========
+
+				// add to packet-set
+				WritableMap packetForRN = Arguments.createMap();
+				packetForRN.putString("type", type);
+				packetForRN.putArray("channelValues", channelValues);
+				currentMuseDataPacketSet.pushMap(packetForRN);
+
+				// send packet-set to js, if ready
+				if (currentMuseDataPacketSet.size() == packetSetSize) {
+					SendEvent("OnReceiveMuseDataPacketSet", currentMuseDataPacketSet);
+					currentMuseDataPacketSet = Arguments.createArray(); // create new set
+				}
 			}
 
 			@Override
 			public void receiveMuseArtifactPacket(final MuseArtifactPacket p, final Muse muse) {}
 		});
 	}
+	public int packetSetSize = 10;
+	WritableArray currentMuseDataPacketSet = Arguments.createArray();
+
 	void RegisterDataListener(MuseDataListener listener) {
 		muse.registerDataListener(listener, MuseDataPacketType.EEG);
 		muse.registerDataListener(listener, MuseDataPacketType.ALPHA_RELATIVE);

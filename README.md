@@ -75,9 +75,9 @@ DeviceEventEmitter.addListener("OnChangeMuseList", args=> {
 		LibMuse.Connect();
 });
 DeviceEventEmitter.addListener("OnReceiveMuseDataPacket", args=> {
-	var [type, data] = args;
-	console.log(`Type: ${type} Data: ${JSON.stringify(data)}`);
-	// ex: "Type: eeg Data: [0.0,728.901098901099,998.0586080586081,1517.838827838828,-1000000000,-1000000000]"
-	// note that -1000000000 signifies "not a number", i.e. no data (communication channel wouldn't support NaN)
+	var [type, channelValues] = args;
+	console.log(`Type: ${type} ChannelValues: ${JSON.stringify(channelValues)}`);
+	// ex: "Type: eeg ChannelValues: [0.0,728.901098901099,998.0586080586081,1517.838827838828,-1000000000,-1000000000]"
+	// note that -1000000000 signifies "not a number", i.e. no data (communication channel doesn't support NaN)
 });
 ```
