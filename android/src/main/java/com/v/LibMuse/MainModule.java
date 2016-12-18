@@ -1,12 +1,8 @@
 package com.v.LibMuse;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
-import com.choosemuse.libmuse.Accelerometer;
 import com.choosemuse.libmuse.ConnectionState;
-import com.choosemuse.libmuse.Eeg;
 import com.choosemuse.libmuse.LibmuseVersion;
 import com.choosemuse.libmuse.Muse;
 import com.choosemuse.libmuse.MuseArtifactPacket;
@@ -37,6 +33,9 @@ import com.facebook.react.modules.core.DeviceEventManagerModule;
 import static com.v.LibMuse.LibMuse.mainActivity;
 
 public class MainModule extends ReactContextBaseJavaModule {
+	public interface Action {
+		void Run();
+	}
 	public interface Func<T> {
 		void Run(T data);
 	}
@@ -45,11 +44,14 @@ public class MainModule extends ReactContextBaseJavaModule {
 	static final String TAG = "TestLibMuseAndroid";
 
 	public static MainModule main;
+	public static Action onInit;
 
 	public MainModule(ReactApplicationContext reactContext) {
 		super(reactContext);
 		main = this;
 		this.reactContext = reactContext;
+		if (onInit != null)
+			onInit.Run();
 	}
 	ReactApplicationContext reactContext;
 
@@ -216,55 +218,25 @@ public class MainModule extends ReactContextBaseJavaModule {
 		});
 	}
 
-	double fakeNaN = -1000000000;
-	void AddValue(WritableArray data, double value) {
-		if (Double.isNaN(value))
-			data.pushDouble(fakeNaN);
-		else
-			data.pushDouble(value);
-	}
-
-	public MuseDataListener extraListener;
-	public boolean dataListenerEnabled = true;
+	public VMuseDataPacket.Listener customHandler;
 	void AddDataListener() {
 		RegisterDataListener(new MuseDataListener() {
 			@Override
-			public void receiveMuseDataPacket(final MuseDataPacket packet, final Muse muse) {
-				if (extraListener != null)
-					extraListener.receiveMuseDataPacket(packet, muse);
+			public void receiveMuseDataPacket(final MuseDataPacket basePacket, final Muse muse) {
+				MuseDataPacketType packetType = basePacket.packetType();
+				// currently we just ignore other packet types
+				if (packetType != MuseDataPacketType.EEG && packetType != MuseDataPacketType.ACCELEROMETER) return;
 
-				if (!dataListenerEnabled) return;
+				VMuseDataPacket packet = new VMuseDataPacket(basePacket);
 
-				MuseDataPacketType packetType = packet.packetType();
+				boolean handled = customHandler.OnReceivePacket(packet);
+				if (handled) return;
 
-				String type;
-				WritableArray channelValues = Arguments.createArray();
-				if (packetType == MuseDataPacketType.EEG) {
-					type = "eeg";
-					AddValue(channelValues, packet.getEegChannelValue(Eeg.EEG1));
-					AddValue(channelValues, packet.getEegChannelValue(Eeg.EEG2));
-					AddValue(channelValues, packet.getEegChannelValue(Eeg.EEG3));
-					AddValue(channelValues, packet.getEegChannelValue(Eeg.EEG4));
-					AddValue(channelValues, packet.getEegChannelValue(Eeg.AUX_LEFT));
-					AddValue(channelValues, packet.getEegChannelValue(Eeg.AUX_RIGHT));
-				}
-				else if (packetType == MuseDataPacketType.ACCELEROMETER) {
-					type = "accelerometer";
-					AddValue(channelValues, packet.getAccelerometerValue(Accelerometer.X));
-					AddValue(channelValues, packet.getAccelerometerValue(Accelerometer.Y));
-					AddValue(channelValues, packet.getAccelerometerValue(Accelerometer.Z));
-				}
-				else if (packetType == MuseDataPacketType.ALPHA_RELATIVE) {
-					type = "alpha";
-					AddValue(channelValues, packet.getEegChannelValue(Eeg.EEG1));
-					AddValue(channelValues, packet.getEegChannelValue(Eeg.EEG2));
-					AddValue(channelValues, packet.getEegChannelValue(Eeg.EEG3));
-					AddValue(channelValues, packet.getEegChannelValue(Eeg.EEG4));
-					AddValue(channelValues, packet.getEegChannelValue(Eeg.AUX_LEFT));
-					AddValue(channelValues, packet.getEegChannelValue(Eeg.AUX_RIGHT));
-				}
-				else // currently we just ignore other packet types
-					return;
+				// load/prepare data
+				if (packet.Type().equals("eeg"))
+					packet.LoadEEGValues();
+				else if (packet.Type().equals("accel"))
+					packet.LoadAccelValues();
 
 				// if you want to send a received packet right away, every frame, use this
 				// ==========
@@ -275,9 +247,7 @@ public class MainModule extends ReactContextBaseJavaModule {
 				// ==========
 
 				// add to packet-set
-				WritableMap packetForRN = Arguments.createMap();
-				packetForRN.putString("type", type);
-				packetForRN.putArray("channelValues", channelValues);
+				WritableMap packetForRN = packet.ToMap();
 				currentMuseDataPacketSet.pushMap(packetForRN);
 
 				// send packet-set to js, if ready

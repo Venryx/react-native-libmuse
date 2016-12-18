@@ -2,7 +2,7 @@
  * @providesModule react-native-libmuse
  */
 
-Object.defineProperty(exports,"__esModule",{value:true});
+Object.defineProperty(exports, "__esModule", {value: true});
  
 var {NativeModules, DeviceEventEmitter} = require("react-native");
 var LibMuse = NativeModules.LibMuse;
@@ -31,9 +31,9 @@ exports.default = {
 		});*/
 		DeviceEventEmitter.addListener("OnReceiveMuseDataPacketSet", args=> {
 			var [packets] = args;
-			for (let {type, channelValues} of packets) {
+			for (let packet of packets) {
 				for (let listener of listeners_onReceiveMuseDataPacket)
-					listener(type, channelValues);
+					listener(packet);
 			}
 		});
 	},
