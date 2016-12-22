@@ -59,11 +59,13 @@ public class VMuseDataPacket {
 
 	public WritableMap ToMap() {
 		WritableMap map = Arguments.createMap();
-		map.putString("type", Type());
+		// maybe temp; don't send type
+		//map.putString("type", Type());
 		if (eegValues != null)
 			map.putArray("eegValues", ToWritableArray(eegValues));
-		if (accelValues != null)
-			map.putArray("accelValues", ToWritableArray(accelValues));
+		// maybe temp; don't send accel-values
+		/*if (accelValues != null)
+			map.putArray("accelValues", ToWritableArray(accelValues));*/
 		return map;
 	}
 
