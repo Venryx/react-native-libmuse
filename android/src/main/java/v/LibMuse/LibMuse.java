@@ -1,4 +1,4 @@
-package com.v.LibMuse;
+package v.LibMuse;
 
 import android.app.Activity;
 

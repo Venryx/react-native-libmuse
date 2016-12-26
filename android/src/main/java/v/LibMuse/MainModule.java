@@ -1,4 +1,4 @@
-package com.v.LibMuse;
+package v.LibMuse;
 
 import java.util.List;
 
@@ -29,8 +29,6 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
-
-import static com.v.LibMuse.LibMuse.mainActivity;
 
 public class MainModule extends ReactContextBaseJavaModule {
 	public interface Action {
@@ -89,14 +87,14 @@ public class MainModule extends ReactContextBaseJavaModule {
 	public MuseManagerAndroid manager;
 
     @ReactMethod public void Init() {
-		if (mainActivity == null)
+		if (LibMuse.mainActivity == null)
 			throw new RuntimeException("LibMuse.mainActivity not set. (set it in your main-activity's constructor)");
 
 		// We need to set the context on MuseManagerAndroid before we can do anything.
 		// This must come before other LibMuse API calls as it also loads the library.
 		try {
 			manager = MuseManagerAndroid.getInstance();
-			manager.setContext(mainActivity);
+			manager.setContext(LibMuse.mainActivity);
 		} catch (Throwable ex) {
 			throw new RuntimeException("Failed to start muse-manager: " + ex);
 		}
@@ -122,20 +120,20 @@ public class MainModule extends ReactContextBaseJavaModule {
 	 * not be discovered and a SecurityException will be thrown.
 	 */
 	private void EnsurePermissions() {
-		if (ContextCompat.checkSelfPermission(mainActivity, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) return;
+		if (ContextCompat.checkSelfPermission(LibMuse.mainActivity, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) return;
 
 		// We don't have the ACCESS_COARSE_LOCATION permission, so create the dialogs asking the user to grant it.
 
 		// This is the context dialog which explains to the user the reason we are requesting
 		// this permission.  When the user presses the positive (I Understand) button, the
 		// standard Android permission dialog will be displayed (as defined in the button listener above).
-		AlertDialog introDialog = new AlertDialog.Builder(mainActivity)
+		AlertDialog introDialog = new AlertDialog.Builder(LibMuse.mainActivity)
 			.setTitle("Requesting permissions")
 			.setMessage("Location-services permission needed for Bluetooth connection to work.")
 			.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 				public void onClick(DialogInterface dialog, int which) {
 					dialog.dismiss();
-					ActivityCompat.requestPermissions(mainActivity, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
+					ActivityCompat.requestPermissions(LibMuse.mainActivity, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
 				}
 			})
 			.create();
@@ -212,6 +210,8 @@ public class MainModule extends ReactContextBaseJavaModule {
 				// We have disconnected from the headband, so set our cached copy to null.
 				MainModule.this.muse = null;
 			}
+
+			muse.setNumConnectTries(1000);
 
 			SendEvent("OnChangeMuseConnectStatus", current.name().toLowerCase());
 			}

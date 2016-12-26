@@ -1,4 +1,4 @@
-package com.v.LibMuse;
+package v.LibMuse;
 
 import android.app.Activity;
 
@@ -57,12 +57,23 @@ public class VMuseDataPacket {
 		accelValues[2] = basePacket.getAccelerometerValue(Accelerometer.Z);
 	}
 
+	public static double EnsureNormalDouble(double value, double fallback) {
+		if (Double.isNaN(value) || Double.isInfinite(value))
+			return fallback;
+		return value;
+	}
 	public WritableMap ToMap() {
 		WritableMap map = Arguments.createMap();
 		// maybe temp; don't send type
 		//map.putString("type", Type());
-		if (eegValues != null)
-			map.putArray("eegValues", ToWritableArray(eegValues));
+		if (eegValues != null) {
+			//map.putArray("eegValues", ToWritableArray(eegValues));
+			// maybe temp; only send channels 1 and 2
+			WritableArray eegValuesArray = Arguments.createArray();
+			eegValuesArray.pushDouble(EnsureNormalDouble(eegValues[1], fakeNaN));
+			eegValuesArray.pushDouble(EnsureNormalDouble(eegValues[2], fakeNaN));
+			map.putArray("eegValues", eegValuesArray);
+		}
 		// maybe temp; don't send accel-values
 		/*if (accelValues != null)
 			map.putArray("accelValues", ToWritableArray(accelValues));*/
