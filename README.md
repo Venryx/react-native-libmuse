@@ -10,9 +10,9 @@ Bridge between libmuse and react-native. (used for my other project)
 
 # Link module with your project
 
-## Option A - automatic
+## Option A - automatic (not currently working)
 
-#### With React Native 0.27+ (not currently working)
+#### With React Native 0.27+
 
 ```shell
 react-native link react-native-libmuse
