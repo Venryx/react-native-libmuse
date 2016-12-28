@@ -1,21 +1,21 @@
 {
-	"name": "react-native-libmuse",
-	"version": "1.0.9",
-	"description": "Bridge between libmuse and react-native.",
-	"main": "index.js",
-	"scripts": {
-	},
-	"author": "Venryx",
-	"license": "MIT",
-	"dependencies": {
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/Venryx/react-native-libmuse"
-	},
-	"keywords": [
-		"react-component",
-		"react-native",
-		"android"
-	]
+  "name": "react-native-libmuse",
+  "version": "1.0.9",
+  "description": "Bridge between libmuse and react-native.",
+  "main": "index.js",
+  "scripts": {},
+  "author": "Venryx",
+  "license": "MIT",
+  "dependencies": {
+    "react-native-background-timer": "^0.1.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Venryx/react-native-libmuse"
+  },
+  "keywords": [
+    "react-component",
+    "react-native",
+    "android"
+  ]
 }

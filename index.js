@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", {value: true});
  
 var {NativeModules, DeviceEventEmitter} = require("react-native");
 var LibMuse = NativeModules.LibMuse;
+var BackgroundTimer = require("react-native-background-timer");
 
 class LibMuseJS {
 	listeners_onReceiveMuseDataPacket = [];
@@ -22,7 +23,7 @@ class LibMuseJS {
 		// ensure we don't have two attempt-timers running at once
 		this.StopReconnectAttemptTimer();
 		// start timer
-		this.reconnectAttemptTimerID = setInterval(()=> {
+		this.reconnectAttemptTimerID = BackgroundTimer.setInterval(()=> {
 			// ensure still disconnected (it might be in the process of connecting)
 			if (this.connectionStatus == "disconnected") 
 				this.RestartSearch();
@@ -31,7 +32,7 @@ class LibMuseJS {
 	StopReconnectAttemptTimer() {
 		if (this.reconnectAttemptTimerID == -1) return;
 		// stop timer
-		clearInterval(this.reconnectAttemptTimerID);
+		BackgroundTimer.clearInterval(this.reconnectAttemptTimerID);
 		this.reconnectAttemptTimerID = -1;
 	}
 
