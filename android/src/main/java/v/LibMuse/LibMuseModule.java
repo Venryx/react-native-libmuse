@@ -15,6 +15,7 @@ import com.choosemuse.libmuse.MuseListener;
 import com.choosemuse.libmuse.MuseManagerAndroid;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
@@ -30,7 +31,7 @@ import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
-public class MainModule extends ReactContextBaseJavaModule {
+public class LibMuseModule extends ReactContextBaseJavaModule {
 	public interface Action {
 		void Run();
 	}
@@ -39,12 +40,13 @@ public class MainModule extends ReactContextBaseJavaModule {
 	}
 
 	// tag used for logging purposes.
-	static final String TAG = "TestLibMuseAndroid";
+	static final String TAG = "LibMuseModule";
 
-	public static MainModule main;
+	public static Activity mainActivity;
+	public static LibMuseModule main;
 	public static Action onInit;
 
-	public MainModule(ReactApplicationContext reactContext) {
+	public LibMuseModule(ReactApplicationContext reactContext) {
 		super(reactContext);
 		main = this;
 		this.reactContext = reactContext;
@@ -87,14 +89,14 @@ public class MainModule extends ReactContextBaseJavaModule {
 	public MuseManagerAndroid manager;
 
     @ReactMethod public void Init() {
-		if (LibMuse.mainActivity == null)
-			throw new RuntimeException("LibMuse.mainActivity not set. (set it in your main-activity's constructor)");
+		if (mainActivity == null)
+			throw new RuntimeException("LibMuseModule.mainActivity not set. (set it in your main-activity's constructor)");
 
 		// We need to set the context on MuseManagerAndroid before we can do anything.
 		// This must come before other LibMuse API calls as it also loads the library.
 		try {
 			manager = MuseManagerAndroid.getInstance();
-			manager.setContext(LibMuse.mainActivity);
+			manager.setContext(mainActivity);
 		} catch (Throwable ex) {
 			throw new RuntimeException("Failed to start muse-manager: " + ex);
 		}
@@ -120,20 +122,20 @@ public class MainModule extends ReactContextBaseJavaModule {
 	 * not be discovered and a SecurityException will be thrown.
 	 */
 	private void EnsurePermissions() {
-		if (ContextCompat.checkSelfPermission(LibMuse.mainActivity, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) return;
+		if (ContextCompat.checkSelfPermission(mainActivity, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) return;
 
 		// We don't have the ACCESS_COARSE_LOCATION permission, so create the dialogs asking the user to grant it.
 
 		// This is the context dialog which explains to the user the reason we are requesting
 		// this permission.  When the user presses the positive (I Understand) button, the
 		// standard Android permission dialog will be displayed (as defined in the button listener above).
-		AlertDialog introDialog = new AlertDialog.Builder(LibMuse.mainActivity)
+		AlertDialog introDialog = new AlertDialog.Builder(mainActivity)
 			.setTitle("Requesting permissions")
 			.setMessage("Location-services permission needed for Bluetooth connection to work.")
 			.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 				public void onClick(DialogInterface dialog, int which) {
 					dialog.dismiss();
-					ActivityCompat.requestPermissions(LibMuse.mainActivity, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
+					ActivityCompat.requestPermissions(mainActivity, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
 				}
 			})
 			.create();
@@ -208,7 +210,7 @@ public class MainModule extends ReactContextBaseJavaModule {
 			if (current == ConnectionState.DISCONNECTED) {
 				Log.i(TAG, "Muse disconnected: " + muse.getName());
 				// We have disconnected from the headband, so set our cached copy to null.
-				MainModule.this.muse = null;
+				LibMuseModule.this.muse = null;
 			}
 
 			muse.setNumConnectTries(1000);
