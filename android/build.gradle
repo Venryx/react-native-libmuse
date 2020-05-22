@@ -13,6 +13,28 @@ plugins {
     id "me.tatarka.retrolambda" version "3.4.0"
 }*/
 
+buildscript {
+    repositories {
+        google()
+        jcenter()
+        maven { url 'https://maven.google.com' } // since jcenter doesn't have gradle:3.0.1
+    }
+    dependencies {
+        //classpath "com.android.tools.build:gradle:2.2.3"
+        //classpath 'com.android.tools.build:gradle:2.3.3'
+        classpath 'com.android.tools.build:gradle:3.6.0'
+    }
+}
+allprojects {
+    repositories {
+        google()
+        jcenter()
+        maven { url 'https://maven.google.com' } // since jcenter doesn't have gradle:3.0.1
+    }
+    dependencies {
+    }
+}
+
 apply plugin: "com.android.library"
 
 // for the retro-lambda plugin above (so Android Studio doesn't show red-lines on lambda code)
@@ -63,5 +85,5 @@ dependencies {
     //compile fileTree(dir: "$buildDir/native-libs", include: 'native-libs.jar')
 
     //compile 'com.google.code.gson:gson:2.8.0'
-    compile project(':react-native-background-timer')
+    //compile project(':react-native-background-timer')
 }

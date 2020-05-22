@@ -192,7 +192,7 @@ public class LibMuseModule extends ReactContextBaseJavaModule {
 	}
 	@ReactMethod public void Disconnect() {
 		if (muse == null) return;
-		muse.disconnect(false);
+		muse.disconnect();
 	}
 
 	void AddConnectionListener() {
