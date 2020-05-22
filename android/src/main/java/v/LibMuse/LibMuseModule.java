@@ -23,6 +23,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
+import com.choosemuse.libmuse.MusePreset;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
@@ -181,14 +182,37 @@ public class LibMuseModule extends ReactContextBaseJavaModule {
 		// Cache the Muse that the user has selected.
 		muse = availableMuses.get(museIndex);
 
+		/*if (muse == null) {
+			Log.i(TAG, "Tried to connect to Muse at index " + museIndex + ", but it was lost from list before connection occurred.");
+			return;
+		}*/
+
 		// Unregister all prior listeners and register our data listener to receive the MuseDataPacketTypes we are interested in.
 		// If you do not register a listener for a particular data type, you will not receive data packets of that type.
 		muse.unregisterAllListeners();
 		AddConnectionListener();
+		AddDataListener();
 
 		// Initiate a connection to the headband and stream the data asynchronously.
-		muse.runAsynchronously();
-		AddDataListener();
+		//muse.runAsynchronously();
+		if (this.muse.isLowEnergy()) {
+			this.muse.setPreset(MusePreset.PRESET_20);
+			//this.sample_freq = this.res.getInteger(C0441R.integer.sample_freq_mu_02);
+			//isLowEnergy = true;
+		} else {
+			this.muse.setPreset(MusePreset.PRESET_12);
+			//this.sample_freq = this.res.getInteger(C0441R.integer.sample_freq_mu_01);
+			//this.pref_showAux = false;
+			//isLowEnergy = false;
+		}
+		//setNotchFrequency();
+		this.muse.enableDataTransmission(true);
+		//try {
+		this.muse.runAsynchronously();
+		//} catch (Exception e) {
+		//	Log.e(TAG, "Got error:" + e);
+		//}
+
 	}
 	@ReactMethod public void Disconnect() {
 		if (muse == null) return;
@@ -198,24 +222,24 @@ public class LibMuseModule extends ReactContextBaseJavaModule {
 	void AddConnectionListener() {
 		muse.registerConnectionListener(new MuseConnectionListener() {
 			@Override public void receiveMuseConnectionPacket(MuseConnectionPacket packet, Muse muse) {
-			final ConnectionState current = packet.getCurrentConnectionState();
+				final ConnectionState current = packet.getCurrentConnectionState();
 
-			// Format a message to show the change of connection state in the UI.
-			final String status = packet.getPreviousConnectionState() + " -> " + current;
-			Log.i(TAG, status);
+				// Format a message to show the change of connection state in the UI.
+				final String status = packet.getPreviousConnectionState() + " -> " + current;
+				Log.i(TAG, status);
 
-			if (current == ConnectionState.CONNECTED) {
-				Log.i(TAG, "Muse connected: " + muse.getName());
-			}
-			if (current == ConnectionState.DISCONNECTED) {
-				Log.i(TAG, "Muse disconnected: " + muse.getName());
-				// We have disconnected from the headband, so set our cached copy to null.
-				LibMuseModule.this.muse = null;
-			}
+				if (current == ConnectionState.CONNECTED) {
+					Log.i(TAG, "Muse connected: " + muse.getName());
+				}
+				if (current == ConnectionState.DISCONNECTED) {
+					Log.i(TAG, "Muse disconnected: " + muse.getName());
+					// We have disconnected from the headband, so set our cached copy to null.
+					LibMuseModule.this.muse = null;
+				}
 
-			muse.setNumConnectTries(1000);
+				muse.setNumConnectTries(1000);
 
-			SendEvent("OnChangeMuseConnectStatus", current.name().toLowerCase());
+				SendEvent("OnChangeMuseConnectStatus", current.name().toLowerCase());
 			}
 		});
 	}
