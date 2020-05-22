@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="Gradle: __local_aars__:C./Root/Apps/@V/@Modules/react-native-libmuse/Main/android/Libraries/libmuse_android.jar:unspecified@jar">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/Libraries/libmuse_android.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>
