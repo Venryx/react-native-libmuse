@@ -1,12 +1,12 @@
 # react-native-libmuse
+
 Bridge between libmuse and react-native. (used for my other project)
+
+NOTE: The NPM package hasn't been updated in a long time, so rather than "npm install ..." below, just clone this repo for the latest version for now.
 
 # Install
 
-1) Run "npm install react-native-libmuse --save".  
-2) Download and install libmuse from here: http://dev.choosemuse.com/android  
-3) Copy "[libmuse install folder]/android/libs/libmuse_android.jar" into "[your project folder]/node_modules/react-native-libmuse/android/Libraries/".  
-4) Copy "[libmuse install folder]/android/libs/armeabi-v7a/" into "[your project folder]/node_modules/react-native-libmuse/android/src/main/jniLibs/".  
+1) Run "npm install react-native-libmuse --save".
 
 # Link module with your project
 
