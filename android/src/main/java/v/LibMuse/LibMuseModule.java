@@ -24,6 +24,7 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import com.choosemuse.libmuse.MusePreset;
+import com.choosemuse.libmuse.NotchFrequency;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
@@ -205,7 +206,13 @@ public class LibMuseModule extends ReactContextBaseJavaModule {
 			//this.pref_showAux = false;
 			//isLowEnergy = false;
 		}
-		//setNotchFrequency();
+
+		// todo: figure out which of these is correct, for matching with BlueMuse recordings
+		// (I *think* it doesn't matter, ie. the notch-frequency only modulates the raw-eeg-derived frequency "packets")
+		//this.muse.setNotchFrequency(NotchFrequency.NOTCH_NONE);
+		//this.muse.setNotchFrequency(NotchFrequency.NOTCH_50HZ);
+		//this.muse.setNotchFrequency(NotchFrequency.NOTCH_60HZ);
+
 		this.muse.enableDataTransmission(true);
 		//try {
 		this.muse.runAsynchronously();
