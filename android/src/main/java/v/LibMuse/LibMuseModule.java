@@ -63,18 +63,12 @@ public class LibMuseModule extends ReactContextBaseJavaModule {
 	public void SendEvent(String eventName, Object... args) {
 		WritableArray argsList = Arguments.createArray();
 		for (Object arg : args) {
-			if (arg == null)
-				argsList.pushNull();
-			else if (arg instanceof Boolean)
-				argsList.pushBoolean((Boolean)arg);
-			else if (arg instanceof Integer)
-				argsList.pushInt((Integer)arg);
-			else if (arg instanceof Double)
-				argsList.pushDouble((Double)arg);
-			else if (arg instanceof String)
-				argsList.pushString((String)arg);
-			else if (arg instanceof WritableArray)
-				argsList.pushArray((WritableArray)arg);
+			if (arg == null) argsList.pushNull();
+			else if (arg instanceof Boolean) argsList.pushBoolean((Boolean)arg);
+			else if (arg instanceof Integer) argsList.pushInt((Integer)arg);
+			else if (arg instanceof Double) argsList.pushDouble((Double)arg);
+			else if (arg instanceof String) argsList.pushString((String)arg);
+			else if (arg instanceof WritableArray) argsList.pushArray((WritableArray)arg);
 			else {
 				//Assert(arg instanceof WritableMap, "Event args must be one of: WritableArray, Boolean")
 				if (!(arg instanceof WritableMap))
@@ -86,11 +80,15 @@ public class LibMuseModule extends ReactContextBaseJavaModule {
 		DeviceEventManagerModule.RCTDeviceEventEmitter jsModuleEventEmitter = reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class);
 		jsModuleEventEmitter.emit(eventName, argsList);
 	}
+	// for Android API
+	public void AddEventListener(String eventName) {
+		
+	}
 
 	// the MuseManager is how you detect Muse headbands and receive notifications when the list of available headbands changes
 	public MuseManagerAndroid manager;
 
-    @ReactMethod public void Init() {
+	@ReactMethod public void Init() {
 		if (mainActivity == null)
 			throw new RuntimeException("LibMuseModule.mainActivity not set. (set it in your main-activity's constructor)");
 
@@ -110,7 +108,7 @@ public class LibMuseModule extends ReactContextBaseJavaModule {
 		EnsurePermissions();
 
 		AddMuseListListener();
-    }
+	}
 
 	/**
 	 * The ACCESS_COARSE_LOCATION permission is required to use the
