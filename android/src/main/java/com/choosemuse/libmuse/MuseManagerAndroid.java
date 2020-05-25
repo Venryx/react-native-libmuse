@@ -155,8 +155,8 @@ public final class MuseManagerAndroid extends MuseManager {
         return UUID.fromString("0000FE8D-0000-1000-8000-00805F9B34FB");
     }
 
-    private ArrayList createMuseList() {
-        ArrayList arrayList;
+    private ArrayList<Muse> createMuseList() { // v-changed
+        ArrayList<Muse> arrayList; // v-changed
         synchronized (this.museList) {
             arrayList = new ArrayList();
 
@@ -167,7 +167,7 @@ public final class MuseManagerAndroid extends MuseManager {
 
                 boolean equals = ((Muse) entry.getValue()).getName().substring(0, 4).equals("Muse");
                 if ((equals && this.isMuseEnabled) || (!equals && this.isSmithxEnabled)) {
-                    arrayList.add(entry.getValue());
+                    arrayList.add((Muse)entry.getValue()); // v-changed
                 }
             }
         }
@@ -178,7 +178,7 @@ public final class MuseManagerAndroid extends MuseManager {
         return this.adapter;
     }
 
-    public ArrayList getMuses() {
+    public ArrayList<Muse> getMuses() { // v-changed
         return createMuseList();
     }
 

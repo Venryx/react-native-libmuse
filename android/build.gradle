@@ -49,6 +49,10 @@ apply plugin: 'kotlin-android'
     }
 }*/
 
+//Boolean excludeReactNative = binding.variables["excludeReactNative"] ?: false
+Boolean excludeReactNative = project.properties["excludeReactNative"] ?: false
+print("excludeReactNative: $excludeReactNative")
+
 android {
     compileSdkVersion 26
     //buildToolsVersion "23.0.1"
@@ -66,6 +70,17 @@ android {
     lintOptions {
        warning "InvalidPackage"
     }
+
+    sourceSets {
+        main {
+            java {
+                if (excludeReactNative) {
+                    exclude '**/LibMusePackage.java'
+                    exclude '**/LibMuseModule.java'
+                }
+            }
+        }
+    }
 }
 
 /*task nativeLibsToJar(type: Zip, description: 'create a jar archive of the native libs') {
@@ -81,8 +96,12 @@ tasks.withType(JavaCompile) {
 }*/
 
 dependencies {
+    // temp; exclude react-native dependency
     //compile "com.facebook.react:react-native:+"
-	implementation 'com.facebook.react:react-native:0.20.+'
+    if (!excludeReactNative) {
+        implementation 'com.facebook.react:react-native:0.20.+'
+    }
+
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     //compile files("Libraries/libmuse_android.jar")
     //compile fileTree(include: ["*.jar"], dir: "Libraries")

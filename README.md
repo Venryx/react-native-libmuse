@@ -49,27 +49,32 @@ include ':app'
   }
 ```
 
-# Usage (Android API)
+# Usage (Android API) [WIP]
 
 ```kotlin
-import LibMuseModule from v.LibMuse;
+import VMuse from v.LibMuse;
 
 fun Start() {
-    val libMuse = LibMuseModule();
-    libMuse.Init();
-    libMuse.StartSearch();
-    DeviceEventEmitter.addListener("OnChangeMuseList", args=> {
-        var [museList] = args;
-        if (museList.length) {
-            libMuse.Connect();
+    val vMuse = VMuse()
+    vMuse.Init()
+    vMuse.StartSearch()
+    vMuse.AddEventListener("OnChangeMuseList") { args ->
+        var museList = args[0] as WritableArray
+        Log.i(TAG, "MuseListSize: ${museList.size()}");
+        if (museList.size() > 0) {
+            vMuse.Connect()
         }
-    });
-    DeviceEventEmitter.addListener("OnReceiveMuseDataPacket", args=> {
-        var [type, channelValues] = args;
-        console.log(`Type: ${type} ChannelValues: ${JSON.stringify(channelValues)}`);
+    }
+    vMuse.AddEventListener("OnChangeMuseConnectStatus") { args ->
+        var status = args[0] as String
+        Log.i(TAG, "Status: $status");
+    }
+    vMuse.AddEventListener("OnReceiveMuseDataPacket_Android") { args ->
+        var packet = args[0] as VMuseDataPacket
+        Log.i(TAG, "Type: ${packet.type} ChannelValues: ${packet.eegValues.contentToString()}");
         // ex: "Type: eeg ChannelValues: [0.0,728.901098901099,998.0586080586081,1517.838827838828,-1000000000,-1000000000]"
         // note that -1000000000 signifies "not a number", i.e. no data (communication channel doesn't support NaN)
-    });
+    }
 }
 ```
 
@@ -79,15 +84,18 @@ fun Start() {
 var LibMuse = require("react-native-libmuse");
 LibMuse.Init();
 LibMuse.StartSearch();
-DeviceEventEmitter.addListener("OnChangeMuseList", args=> {
-	var [museList] = args;
-	if (museList.length)
-		LibMuse.Connect();
+LibMuse.AddListener_OnChangeMuseList(museList=> {
+    console.log(`MuseListSize: ${museList.length}`);
+	if (museList.length) {
+        LibMuse.Connect();
+    }
 });
-DeviceEventEmitter.addListener("OnReceiveMuseDataPacket", args=> {
-	var [type, channelValues] = args;
-	console.log(`Type: ${type} ChannelValues: ${JSON.stringify(channelValues)}`);
-	// ex: "Type: eeg ChannelValues: [0.0,728.901098901099,998.0586080586081,1517.838827838828,-1000000000,-1000000000]"
+LibMuse.AddListener_OnChangeMuseConnectStatus(status=> {
+    console.log(`Status: ${status}`);
+});
+LibMuse.AddListener_OnReceiveMuseDataPacket(packet=> {
+    console.log(packet);
+    // ex: {eegValues: [0.0,728.901098901099,998.0586080586081,1517.838827838828,-1000000000,-1000000000]}
 	// note that -1000000000 signifies "not a number", i.e. no data (communication channel doesn't support NaN)
 });
 ```
