@@ -37,10 +37,6 @@ allprojects {
     }
 }
 
-apply plugin: "com.android.library"
-apply plugin: 'kotlin-android-extensions'
-apply plugin: 'kotlin-android'
-
 // for the retro-lambda plugin above (so Android Studio doesn't show red-lines on lambda code)
 /*android {
     compileOptions {
@@ -50,9 +46,10 @@ apply plugin: 'kotlin-android'
 }*/
 
 //Boolean excludeReactNative = binding.variables["excludeReactNative"] ?: false
-Boolean excludeReactNative = project.properties["excludeReactNative"] ?: false
-print("excludeReactNative: $excludeReactNative")
+Boolean excludeReactNative = project.properties["excludeReactNative"] == "true" ?: false
+println("excludeReactNative: $excludeReactNative")
 
+apply plugin: "com.android.library"
 android {
     compileSdkVersion 26
     //buildToolsVersion "23.0.1"
@@ -75,13 +72,32 @@ android {
         main {
             java {
                 if (excludeReactNative) {
-                    exclude '**/LibMusePackage.java'
-                    exclude '**/LibMuseModule.java'
+                    println("excludeReactNative_2: $excludeReactNative")
+
+                    println("srcDirs:${java.srcDirs}")
+                    //exclude '**/*'
+                    //java.exclude '**/*'
+
+                    //java.exclude '**/LibMusePackage.kt'
+                    //java.exclude '**/LibMuseModule.kt'
+                    //java.exclude '**/ReactNativeHelpers.kt'
+
+                    //println("jniLibs:${jniLibs.srcDirs}")
+                    //jniLibs.srcDirs = [java.srcDirs[0].toString() + "../jniLibs"]
+
+                    // the file-excludes don't work fsr; so split into folders, and only include the core/non-rn folder
+                    //java.srcDirs = [java.srcDirs[0].toString() + "/com", java.srcDirs[0].toString() + "/v/LibMuse/core"]
+                    //java.srcDirs = [java.srcDirs[0].toString() + "/com/choosemuse/libmuse", java.srcDirs[0].toString() + "/v/LibMuse/core"]
+                    java.srcDirs = [java.srcDirs[0].toString() + "/core"]
+                    println("srcDirs2:${java.srcDirs}")
                 }
             }
         }
     }
 }
+
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 
 /*task nativeLibsToJar(type: Zip, description: 'create a jar archive of the native libs') {
     destinationDir file("$buildDir/native-libs")
@@ -96,7 +112,10 @@ tasks.withType(JavaCompile) {
 }*/
 
 dependencies {
-    // temp; exclude react-native dependency
+    implementation 'com.android.support:appcompat-v7:26.0.0'
+    // delaying androidx until lf-project is updated to version of capacitor compatible with androidx
+    //implementation "androidx.appcompat:appcompat:1.1.0"
+
     //compile "com.facebook.react:react-native:+"
     if (!excludeReactNative) {
         implementation 'com.facebook.react:react-native:0.20.+'

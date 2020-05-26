@@ -13,9 +13,15 @@ NOTE: The NPM package hasn't been updated in a long time, so rather than "npm in
 - in `android/app/build.gradle`:
 
 ```diff
+android {
+    defaultConfig {
++        ndk { abiFilters "armeabi-v7a" }
+    }
+}
+
 dependencies {
-    ...
-    compile "com.facebook.react:react-native:+"  // From node_modules
+    [...]
+    compile "com.facebook.react:react-native:+"  // from node_modules
 +   compile project(':react-native-libmuse')
 }
 ```
@@ -23,7 +29,7 @@ dependencies {
 - in `android/settings.gradle`:
 
 ```diff
-...
+[...]
 include ':app'
 + include ':react-native-libmuse'
 + project(':react-native-libmuse').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-libmuse/android')
@@ -99,3 +105,9 @@ LibMuse.AddListener_OnReceiveMuseDataPacket(packet=> {
 	// note that -1000000000 signifies "not a number", i.e. no data (communication channel doesn't support NaN)
 });
 ```
+
+# Troubleshooting
+
+> I hit an error: "Duplicate class com.facebook.jni.CppException found in modules [...].jar"
+
+You're most likely using another Facebook library like pytorch, which contains duplicates of the Facebook JNI classes defined in react-native. To fix this, add `excludeReactNative = true` to your app's `gradle.properties` file.

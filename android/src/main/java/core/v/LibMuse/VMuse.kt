@@ -4,12 +4,13 @@ import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.pm.PackageManager
-import android.support.v4.app.ActivityCompat
-import android.support.v4.content.ContextCompat
 import android.util.Log
 import com.choosemuse.libmuse.*
-import com.facebook.react.bridge.*
-import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
+
+import android.support.v4.app.ActivityCompat
+import android.support.v4.content.ContextCompat
+//import androidx.core.content.ContextCompat
+//import androidx.core.app.ActivityCompat
 
 interface Action {
     fun Run()
@@ -25,30 +26,17 @@ class VMuse {
         var mainActivity: Activity? = null
     }
 
-    lateinit var module: LibMuseModule
+    //lateinit var module: LibMuseModule
 
     fun SendEvent(eventName: String?, vararg args: Any) {
-        val argsList = Arguments.createArray()
-        for (arg in args) {
-            when (arg) {
-                null -> argsList.pushNull()
-                is Boolean -> argsList.pushBoolean((arg as Boolean?)!!)
-                is Int -> argsList.pushInt((arg as Int?)!!)
-                is Double -> argsList.pushDouble((arg as Double?)!!)
-                is String -> argsList.pushString(arg as String?)
-                is WritableArray -> argsList.pushArray(arg as WritableArray?)
-                else -> {
-                    //Assert(arg instanceof WritableMap, "Event args must be one of: WritableArray, Boolean")
-                    if (arg !is WritableMap) throw RuntimeException("Event args must be one of: Boolean, Integer, Double, String, WritableArray, WritableMap")
-                    argsList.pushMap(arg as WritableMap?)
-                }
-            }
-        }
-
         //SendEvent_Android(eventName, args.toList())
-        SendEvent_Android(eventName, args)
-        SendEvent_JS(eventName, argsList)
+        SendEvent_Android(eventName, *args)
 
+        // also send it to the "*" event-listener (if one exists, eg. from LibMuseModule.kt)
+        if (eventListeners.containsKey("*")) {
+            //SendEvent_JS(eventName, argsList)
+            SendEvent_Android("*", eventName!!, *args)
+        }
     }
     fun SendEvent_Android(eventName: String?, vararg args: Any) {
         if (eventListeners.containsKey(eventName)) {
@@ -56,12 +44,6 @@ class VMuse {
                 //it(argsList)
                 it(args.toList())
             }
-        }
-    }
-    fun SendEvent_JS(eventName: String?, argsList: WritableArray) {
-        if (this.module != null) {
-            val jsModuleEventEmitter = this.module.reactContext.getJSModule(RCTDeviceEventEmitter::class.java)
-            jsModuleEventEmitter.emit(eventName, argsList)
         }
     }
 
@@ -85,14 +67,16 @@ class VMuse {
             manager = MuseManagerAndroid.getInstance()
             manager!!.setContext(mainActivity)
         } catch (ex: Throwable) {
-            throw RuntimeException("Failed to start muse-manager: $ex")
+            throw RuntimeException("Failed to start muse-manager (confirm that libmuse_android.so is accessible)", ex)
         }
         Log.i(TAG, "LibMuse version=" + LibmuseVersion.instance().string)
 
-        // Muse 2016 (MU-02) headbands use Bluetooth Low Energy technology to simplify the connection process.
-        // This requires the COARSE_LOCATION or FINE_LOCATION permissions. Make sure we have these permissions before proceeding.
-        EnsurePermissions()
-        AddMuseListListener()
+        mainActivity!!.runOnUiThread {
+            // Muse 2016 (MU-02) headbands use Bluetooth Low Energy technology to simplify the connection process.
+            // This requires the COARSE_LOCATION or FINE_LOCATION permissions. Make sure we have these permissions before proceeding.
+            EnsurePermissions()
+            AddMuseListListener()
+        }
     }
 
     /**
@@ -144,16 +128,17 @@ class VMuse {
         // Register a listener to receive notifications of what Muse headbands we can connect to.
         manager!!.setMuseListener(object : MuseListener() {
             override fun museListChanged() {
-                val museList = Arguments.createArray()
+                /*val museList = arrayListOf<Muse>()
                 for (muse in manager!!.muses) {
                     val museInfo = Arguments.createMap()
                     museInfo.putString("name", muse.name)
                     museInfo.putString("macAddress", muse.macAddress)
                     museInfo.putDouble("lastDiscoveredTime", muse.lastDiscoveredTime)
                     museInfo.putDouble("rssi", muse.rssi)
-                    museList.pushMap(museInfo)
+                    museList.add(museInfo)
                 }
-                SendEvent("OnChangeMuseList", museList)
+                SendEvent("OnChangeMuseList", museList)*/
+                SendEvent("OnChangeMuseList", manager!!.muses)
             }
         })
     }
@@ -230,41 +215,34 @@ class VMuse {
         })
     }
 
-    var customHandler: VMuseDataPacket.Listener? = null
+    //var customHandler: VMuseDataPacket.Listener? = null
     fun AddDataListener() {
         RegisterDataListener(object : MuseDataListener() {
             override fun receiveMuseDataPacket(basePacket: MuseDataPacket, muse: Muse) {
-                val packetType = basePacket.packetType()
-                // currently we just ignore other packet types
-                if (packetType != MuseDataPacketType.EEG && packetType != MuseDataPacketType.ACCELEROMETER) return
+                //Log.i(TAG, "Got packet: $basePacket")
 
-                val packet = VMuseDataPacket(basePacket)
-                val handled = customHandler!!.OnReceivePacket(packet)
-                if (handled) return
+                try {
+                    val packetType = basePacket.packetType()
+                    // currently we just ignore other packet types
+                    //if (packetType != MuseDataPacketType.EEG && packetType != MuseDataPacketType.ACCELEROMETER) return
+                    if (packetType != MuseDataPacketType.EEG) return
 
-                // load/prepare data
-                when (packet.type) {
-                    "eeg" -> packet.LoadEEGValues()
-                    "accel" -> packet.LoadAccelValues()
-                }
-                val packetForRN = packet.ToMap()
+                    val packet = VMuseDataPacket(basePacket)
+                    /*if (customHandler != null) {
+                        val handled = customHandler!!.OnReceivePacket(packet)
+                        if (handled) return
+                    }*/
 
-                // if you want to send a received packet right away, every frame, use this
-                // ==========
+                    // load/prepare data
+                    when (packet.type) {
+                        "eeg" -> packet.LoadEEGValues()
+                        "accel" -> packet.LoadAccelValues()
+                    }
 
-                //SendEvent_Android("OnReceiveMuseDataPacket", packetForRN);
-                SendEvent_Android("OnReceiveMuseDataPacket_Android", packet);
-
-                // otherwise, use the default below, of buffering then sending in a set
-                // ==========
-
-                // add to packet-set
-                currentMuseDataPacketSet.pushMap(packetForRN)
-
-                // send packet-set to js, if ready
-                if (currentMuseDataPacketSet.size() == packetSetSize) {
-                    SendEvent("OnReceiveMuseDataPacketSet", currentMuseDataPacketSet)
-                    currentMuseDataPacketSet = Arguments.createArray() // create new set
+                    SendEvent("OnReceiveMuseDataPacket", packet);
+                }  catch (ex: Throwable) {
+                    val ex2 = RuntimeException("Error in muse-data-packet listener", ex)
+                    ex2.printStackTrace()
                 }
             }
 
@@ -272,8 +250,6 @@ class VMuse {
         })
     }
 
-    var packetSetSize = 10
-    var currentMuseDataPacketSet = Arguments.createArray()
     fun RegisterDataListener(listener: MuseDataListener?) {
         muse!!.registerDataListener(listener, MuseDataPacketType.EEG)
         muse!!.registerDataListener(listener, MuseDataPacketType.ALPHA_RELATIVE)
