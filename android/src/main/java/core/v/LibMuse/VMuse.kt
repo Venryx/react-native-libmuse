@@ -146,10 +146,11 @@ class VMuse {
     var muse: Muse? = null
 
     fun Connect(museIndex: Int = 0) {
-        // Listening is expensive, so now that we know which headband the user wants to connect to, we can stop listening for other headbands.
-        StopSearch()
         // Cache the Muse that the user has selected.
         muse = manager!!.muses[museIndex]
+
+        // Listening is expensive, so now that we know which headband the user wants to connect to, we can stop listening for other headbands.
+        StopSearch()
 
         /*if (muse == null) {
 			Log.i(TAG, "Tried to connect to Muse at index " + museIndex + ", but it was lost from list before connection occurred.");
@@ -239,7 +240,7 @@ class VMuse {
                         "accel" -> packet.LoadAccelValues()
                     }
 
-                    SendEvent("OnReceiveMuseDataPacket", packet);
+                    SendEvent("OnReceiveMuseDataPacket", packet)
                 }  catch (ex: Throwable) {
                     val ex2 = RuntimeException("Error in muse-data-packet listener", ex)
                     ex2.printStackTrace()

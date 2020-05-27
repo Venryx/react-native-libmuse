@@ -8,6 +8,8 @@ var {NativeModules, DeviceEventEmitter} = require("react-native");
 var LibMuse = NativeModules.LibMuse;
 var BackgroundTimer = require("react-native-background-timer");
 
+// todo: move all logic/substance below into the Android "/core" portion
+
 class LibMuseJS {
 	listeners_onReceiveMuseDataPacket = [];
 	listeners_onChangeMuseConnectStatus = []
