@@ -1,12 +1,13 @@
 {
   "name": "react-native-libmuse",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Bridge between libmuse and react-native.",
   "files": [
     "index.js",
     "android/Libraries",
     "android/src",
-    "android/build.gradle"
+    "android/build.gradle",
+    "android/react-native-libmuse.iml"
   ],
   "main": "index.js",
   "scripts": {},
